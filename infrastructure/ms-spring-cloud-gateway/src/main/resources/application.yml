@@ -1,0 +1,18 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: ms-productos
+          # lb: Load Balanced, es decir accederemos al ms productos mediante Load Balanced
+          uri: lb://ms-productos
+          predicates:
+            - Path=/api-base/productos-base/**
+          filters:
+            # 2, porque el path (/api-base/productos-base/**) está compuesta por 2 segmentos: api-base y productos-base
+            - StripPrefix=2
+        - id: ms-items
+          uri: lb://ms-items
+          predicates:
+            - Path=/api-base/items-base/**
+          filters:
+            - StripPrefix=2
