@@ -16,6 +16,7 @@
 
     <modules>
         <module>ms-eureka-server</module>
+        <module>ms-spring-cloud-gateway</module>
     </modules>
 
 </project>
