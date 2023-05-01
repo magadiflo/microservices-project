@@ -61,8 +61,10 @@ public class EjemploGlobalFilter implements GlobalFilter, Ordered {
      * valor más bajo tiene la prioridad más alta (algo similar a los valores de carga en el inicio de Servlet).
      * <p>
      * En palabras sencillas, le estamos diciendo que el número de orden en el que se ejecutará este filtro
-     * será el N° 100. Con esto, permitimos que se ejecuten primero otros filtros que tengan un
-     * valor menor y por lo tanto, mayor prioridad para ejecutarse primero.
+     * será el N° 100. Con esto, permitimos que se ejecuten primero otros filtros  que tengan un
+     * valor menor y por lo tanto, mayor prioridad para ejecutarse primero, tal es el caso de los filtros
+     * que por defecto trae Gateway. Necesitamos que primero se ejecuten dichos filtros, para luego ejecutar
+     * los nuestros.
      */
     @Override
     public int getOrder() {
