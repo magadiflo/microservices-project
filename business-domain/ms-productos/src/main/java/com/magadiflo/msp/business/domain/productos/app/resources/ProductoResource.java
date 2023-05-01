@@ -1,0 +1,41 @@
+package com.magadiflo.msp.business.domain.productos.app.resources;
+
+import com.magadiflo.msp.business.domain.productos.app.models.entity.Producto;
+import com.magadiflo.msp.business.domain.productos.app.service.IProductoService;
+import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Objects;
+
+@RestController
+@RequestMapping(path = "/api/v1/productos")
+public class ProductoResource {
+    private final IProductoService productoService;
+    private final Environment environment;
+
+    public ProductoResource(IProductoService productoService, Environment environment) {
+        this.productoService = productoService;
+        this.environment = environment;
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Producto>> listarProductos() {
+        return ResponseEntity.ok(this.productoService.findAll().stream().map(this::productoConPuerto).toList());
+    }
+
+    @GetMapping(path = "/{id}")
+    public ResponseEntity<Producto> verProducto(@PathVariable Long id) {
+        Producto producto = this.productoService.findById(id);
+        return ResponseEntity.ok(this.productoConPuerto(producto));
+    }
+
+    private Producto productoConPuerto(Producto producto) {
+        producto.setPort(Integer.valueOf(Objects.requireNonNull(this.environment.getProperty("local.server.port"))));
+        return producto;
+    }
+}
