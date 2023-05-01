@@ -5,7 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Este módulo contendrá las dependencias antiguas como Zuul, Hystrix, Ribbon, etc.
-    Por esa razón no heredamos del pom padre, ya que allí definimos una versión más
+    o también proyectos en Spring Boot cuya versión sea inferior a la que usamos en el
+    proyecto padre. Por esa razón no heredamos del pom padre, ya que allí definimos una versión más
     actual de Spring Boot y Spring Cloud-->
 
     <groupId>com.magadiflo.msp</groupId>
@@ -16,6 +17,7 @@
 
     <modules>
         <module>ms-zuul-server</module>
+        <module>ms-items</module>
     </modules>
 
 </project>
