@@ -10,6 +10,10 @@ spring:
           filters:
             # 2, porque el path (/api-base/productos-base/**) está compuesta por 2 segmentos: api-base y productos-base
             - StripPrefix=2
+            # Aplicando este filtro solo a ms-productos
+            # Ejemplo, corresponde al prefijo del nombre de la clase que creamos: EjemploGatewayFilterFactory
+            # El orden en que enviamos los parámetros lo está definiendo el método shortcutFieldOrder() del filtro personalizado.
+            - EjemploNuevoNombreFiltroCookie=Hola este es mi mensaje personalizado, usuario, magadiflo
         - id: ms-items
           uri: lb://ms-items
           predicates:

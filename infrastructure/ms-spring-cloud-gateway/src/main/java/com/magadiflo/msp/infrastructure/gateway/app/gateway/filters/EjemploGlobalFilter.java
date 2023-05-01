@@ -25,7 +25,7 @@ public class EjemploGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        LOG.info("Ejecutando filtro PRE");
+        LOG.info("[GLOBAL] Ejecutando filtro PRE");
 
         // Al request que viene desde el cliente (Ejm. postman) le agregamos el atributo token-request a su header
         exchange.getRequest().mutate().headers(httpHeaders -> {
@@ -34,7 +34,7 @@ public class EjemploGlobalFilter implements GlobalFilter, Ordered {
 
         return chain.filter(exchange)
                 .then(Mono.fromRunnable(() -> {
-                    LOG.info("Ejecutando filtro POST");
+                    LOG.info("[GLOBAL] Ejecutando filtro POST");
 
                     // Al response que se devolverá al cliente, le modificamos sus headers para enviarle
                     // el mismo token que nos mandó en el request (token-request). Pero antes, preguntamos si está presente

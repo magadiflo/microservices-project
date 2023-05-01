@@ -1,6 +1,6 @@
 # Spring Cloud Gateway
 
-# Implementando Filtros Globales
+## Implementando Filtros Globales
 
 - Podemos implementar filtros globales, es decir filtros que se aplican a cualquier ruta.
 - Para eso implementamos la interfaz **GlobalFilter** y le damos un orden.
@@ -16,3 +16,80 @@ public class EjemploGlobalFilter implements GlobalFilter, Ordered {
     public int getOrder() { ... }
 }
 ````
+
+## Agregando filtro personalizado en una ruta en particular
+
+- Creamos nuestra clase que será un filtro personalizado con el nombre
+  **Ejemplo** y al que le agregamos el sufijo **GatewayFilterFactory**:
+
+> EjemploGatewayFilterFactory
+
+- Internamente, creamos una clase Configuración con 3 atributos.
+- Para decirle a Spring Cloud Gateway que este filtro solo lo aplique
+  a la ruta del **microservicio productos**, en el application.yml le
+  agregamos la configuración:
+
+````
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: ms-productos
+          uri: lb://ms-productos
+          predicates:
+            - Path=/api-base/productos-base/**
+          filters:
+            # Filtro de fábrica
+            - StripPrefix=2
+            # Filtro personalizado aplicado a ms-productos
+            # Ejemplo, corresponde al prefijo del nombre de la clase que creamos: EjemploGatewayFilterFactory
+            - name: Ejemplo
+              # Los argumentos corresponde a los atributos de la clase de configuración
+              args:
+                mensaje: Hola, soy un mensaje personalizado
+                cookieNombre: usuario
+                cookieValor: MartDiaz
+````
+
+- Otra forma de agregar el filtro sería:
+
+````
+filters:
+  # 2, porque el path (/api-base/productos-base/**) está compuesta por 2 segmentos: api-base y productos-base
+  - StripPrefix=2
+  
+  # Aplicando este filtro solo a ms-productos
+  # Ejemplo, corresponde al prefijo del nombre de la clase que creamos: EjemploGatewayFilterFactory
+  # El orden en que enviamos los parámetros lo está definiendo el método shortcutFieldOrder() del filtro personalizado.
+  - Ejemplo=Hola este es mi mensaje personalizado, usuario, magadiflo
+````
+
+- Por defecto toma el prefijo del nombre de la clase (si es que le hemos agregado el sufijo GatewayFilterFactory),
+  pero podemos cambiarle. Para eso debemos sobreescribir el método **name()** y retornar el nuevo nombre:
+
+> EjemploNuevoNombreFiltroCookie
+
+- Ahora, en el application.yml realizar una pequeña modificación donde definimos el filtro personalizado:
+
+````
+- EjemploNuevoNombreFiltroCookie=Hola este es mi mensaje personalizado, usuario, magadiflo
+````
+
+## Asignando Orden al filtro personalizado
+
+- Al código que ya tenemos implementado lo envolvemos dentro de la clase **OrderedGatewayFilter(..)**.
+- De esta manera quedaría:
+
+ ````
+@Override
+public GatewayFilter apply(Configuracion configuracion) {
+    return new OrderedGatewayFilter((exchange, chain) -> { 
+      // Código que hacía ejecuta la lógica del filtro pre - post
+    }, 2);
+}
+ ````
+
+- Donde el orden que le damos al filtro es **2**.
+- Ahora, esa configuración del orden solo lo hacemos si en caso lo queremos ordenar,
+  en caso contrario, solo retornamos el lamba, como normalmente estaba sin la clase
+  de ordenamiento.
