@@ -93,3 +93,36 @@ public GatewayFilter apply(Configuracion configuracion) {
 - Ahora, esa configuración del orden solo lo hacemos si en caso lo queremos ordenar,
   en caso contrario, solo retornamos el lamba, como normalmente estaba sin la clase
   de ordenamiento.
+
+## Agregando filtros de fábrica en ruta del ms-items
+
+- Agregaremos algunos filtros que vienen de fábrica en Spring Cloud Gateway,
+  pero solo par cuando se accede a la ruta del microservicio items. Para eso
+  modificamos el application.yml y agregamos los filtros.
+
+````
+- id: ms-items
+  uri: lb://ms-items
+  predicates:
+    - Path=/api-base/items-base/**
+  filters:
+    - StripPrefix=2
+    # Filtros que vienen de fábrica en Spring Cloud Gateway
+    - AddRequestHeader=token-req, 987654
+    - AddResponseHeader=token-resp, 456123
+    - AddRequestParameter=nombre, Martin
+````
+
+- Para ver los datos configurados en estos filtros, en el resource del ms-items,
+  método getAllItems(...) agregamos como parámetros los datos eviados por los
+  filtros usando el @RequestParam y el @RequestHeader. El ReponseHeader lo
+  vemos con Postman.
+
+````
+@GetMapping
+public ResponseEntity<List<Item>> getAllItems(@RequestParam String nombre, @RequestHeader(name = "token-req") String token) {
+    LOG.info("[Desde filtro de fábrica] name: {}, token: {}", nombre, token);
+    return ResponseEntity.ok(this.itemService.findAll());
+}
+````
+

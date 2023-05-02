@@ -20,3 +20,7 @@ spring:
             - Path=/api-base/items-base/**
           filters:
             - StripPrefix=2
+            # Filtros que vienen de fábrica en Spring Cloud Gateway
+            - AddRequestHeader=token-req, 987654
+            - AddResponseHeader=token-resp, 456123
+            - AddRequestParameter=nombre, Martin
