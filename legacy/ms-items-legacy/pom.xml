@@ -11,9 +11,9 @@
     </parent>
 
     <groupId>com.magadiflo.msp.business.domain</groupId>
-    <artifactId>ms-items</artifactId>
+    <artifactId>ms-items-legacy</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>ms-items</name>
+    <name>ms-items-legacy</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>

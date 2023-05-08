@@ -16,6 +16,7 @@
 
     <modules>
         <module>ms-productos</module>
+        <module>ms-items</module>
     </modules>
 
 </project>

@@ -17,7 +17,7 @@
 
     <modules>
         <module>ms-zuul-server</module>
-        <module>ms-items</module>
+        <module>ms-items-legacy</module>
     </modules>
 
 </project>
