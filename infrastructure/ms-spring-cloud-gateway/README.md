@@ -126,3 +126,46 @@ public ResponseEntity<List<Item>> getAllItems(@RequestParam String nombre, @Requ
 }
 ````
 
+## Agregando predicates de fábrica en la ruta del ms-productos
+
+Los **predicates** Son reglas o restricciones del request. Por ejemplo, para acceder a
+nuestro ms-productos:
+
+- El **Path** debe iniciar con /api-base/productos-base/**
+- El **Header** debe traer un atributo token cuyo valor sera numérico (\d+)
+- El **Method** permitido puede ser GET o POST
+- El **Query (param)**, debe tener un parámetro en la url llamado color con valor verde
+- El **Cookie**, que venga debe tener un atributo color con valor azul
+
+Para que nuestro **Spring Cloud Gateway** permita redirigir la request al ms-productos,
+esta request debe cumplir todos esos predicates, es decir, tendría este aspecto cuando
+se haga la request desde postman:
+
+````
+[GET] http://127.0.0.1:8090/api-base/productos-base/api/v1/productos?color=verde
+Headers:
+  token: 123456
+Cookies:
+  domain: 127.0.0.1
+  color=azul; Path=/api-base/productos-base/api/v1/productos;
+````
+
+Así estaría configurado en nuestro application.yml del ms-spring-cloud-gateway:
+
+````
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: ms-productos
+          # lb: Load Balanced, es decir accederemos al ms productos mediante Load Balanced
+          uri: lb://ms-productos
+          predicates:
+            - Path=/api-base/productos-base/**
+            - Header=token, \d+
+            - Method=GET, POST
+            - Query=color, verde
+            - Cookie=color, azul
+          ......
+          ......
+````
