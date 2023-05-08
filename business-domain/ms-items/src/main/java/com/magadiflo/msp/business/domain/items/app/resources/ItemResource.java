@@ -59,10 +59,11 @@ public class ItemResource {
          */
         return circuitBreakerFactory.create("items")
                 .run(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)),
-                        e -> this.metodoAlternativo(productoId, cantidad));
+                        e -> this.metodoAlternativo(productoId, cantidad, e));
     }
 
-    public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad) {
+    public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad, Throwable e) {
+        LOG.info("[Dentro del método alternativo] mensaje de error: {}", e.getMessage());
         Producto producto = new Producto();
         producto.setId(productoId);
         producto.setNombre("Cámara Sony");
