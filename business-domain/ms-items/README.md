@@ -29,3 +29,36 @@ y [StackOverflow](https://stackoverflow.com/questions/2619598/differences-betwee
   omitirlos al especificar las dependencias en el pom secundario. Esto puede ayudar a usar
   versiones unificadas para las dependencias de los módulos secundarios, sin especificar
   la versión en cada módulo secundario.
+
+## Trabajando con Resilience4j - método alternativo [Forma programática]
+
+Similar a cómo trabajábamos con Hystrix dándole al método un camino alternativo, aquí también
+hacemos lo mismo, pero usando **Resilience4j, expresiones lambda y de forma programática**.
+
+El código sería como se muestra a continuación:
+
+````
+# .create("items"), donde "items" es el identificador que le damos a este Circuit Breaker
+
+# Método que usa el CircuitBreaker
+@GetMapping(path = "/producto/{productoId}/cantidad/{cantidad}")
+public ResponseEntity<Item> getItem(@PathVariable Long productoId, @PathVariable Integer cantidad) {
+    return circuitBreakerFactory.create("items")
+            .run(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)),
+                    e -> this.metodoAlternativo(productoId, cantidad));
+}
+
+# Método alternativo a espera de algún fallo para ejecutarse
+public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad) {
+    Producto producto = new Producto();
+    producto.setId(productoId);
+    producto.setNombre("Cámara Sony");
+    producto.setPrecio(500D);
+
+    Item item = new Item();
+    item.setCantidad(cantidad);
+    item.setProducto(producto);
+
+    return ResponseEntity.ok(item);
+}
+````

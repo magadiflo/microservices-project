@@ -7,6 +7,7 @@ import com.magadiflo.msp.business.domain.items.app.service.IItemService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,10 +17,12 @@ import java.util.List;
 @RequestMapping(path = "/api/v1/items")
 public class ItemResource {
     private final IItemService itemService;
+    private final CircuitBreakerFactory circuitBreakerFactory;
     private static final Logger LOG = LoggerFactory.getLogger(ItemResource.class);
 
-    public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService) {
+    public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory) {
         this.itemService = itemService;
+        this.circuitBreakerFactory = circuitBreakerFactory;
     }
 
     /**
@@ -48,7 +51,15 @@ public class ItemResource {
 
     @GetMapping(path = "/producto/{productoId}/cantidad/{cantidad}")
     public ResponseEntity<Item> getItem(@PathVariable Long productoId, @PathVariable Integer cantidad) {
-        return ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad));
+        /**
+         * .create("items"), donde "items" es el identificador de este Circuit Breaker
+         * La implementación del código de abajo es similar a cómo usábamos el fallBack de Hystrix para llamar
+         * a un método alternativo cuando falle el método original, pero en este caso estamos usando
+         * Resilience4j junto a expresiones lambda (Forma programática).
+         */
+        return circuitBreakerFactory.create("items")
+                .run(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)),
+                        e -> this.metodoAlternativo(productoId, cantidad));
     }
 
     public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad) {
