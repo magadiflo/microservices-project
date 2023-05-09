@@ -220,3 +220,54 @@ http://127.0.0.1:8002/api/v1/items/producto/7/cantidad/3
 ````
 
 - Como respuesta, nos mostrará el camino alternativo.
+
+## Personalizando las llamadas lentas
+
+Realizaremos la siguiente configuración relacionado a las llamadas lentas en el mismo
+bean de configuración del **Personalizando parámetros del Circuit Breaker**.
+
+````
+@Bean
+public Customizer<Resilience4JCircuitBreakerFactory> defaultCustomizer() {
+    ......................
+    ......................
+                .circuitBreakerConfig(CircuitBreakerConfig.custom()
+                        .......
+                        .......
+                        .slowCallRateThreshold(50)
+                        .slowCallDurationThreshold(Duration.ofSeconds(2L))
+                        .build())
+                .timeLimiterConfig(TimeLimiterConfig.custom()
+                        .timeoutDuration(Duration.ofSeconds(6L)).build())
+                .build();
+    });
+}
+````
+
+**DONDE**
+
+- **slowCallRateThreshold(50)**, el umbral de tasa de llamadas lentas la
+  configuramos al 50% (por defecto es 100%), eso significa que si el
+  porcentaje de llamadas lentas son iguales o mayores al umbral que definimos
+  el **Circuit Breaker pasará a un estado de abierto**.
+- **slowCallDurationThreshold(Duration.ofSeconds(2L))**, umbral de duración de
+  llamada lenta. Una llamada será lenta, cuando la duración de esa llamada es
+  mayor a los 2 segundos que configuramos aquí (por defecto es 60 segundos).
+
+**NOTA**
+
+El timeOut siempre ocurre primero que las llamadas lentas. Al umbral de duración de
+llamadas lentas le dimos una duración de 2 segundos, mismo tiempo que tenía
+el timeOut configurado anteriormente, por lo tanto, para poder ver el tema de las llamadas lentas,
+subimos el TimeOut en 6 segundos, que incluso es un valor mayor al sleep(5 segundos) que le
+dimos en el ProductoResources (verProducto(...)), esto para que no ocurra el TimeOut y podamos
+ver a modo práctico las llamadas lentas.
+
+**FUNCIONAMIENTO**
+
+Cuando hagamos una petición con el id del producto igual a 7, ocurrirá una llamada lenta y no un
+timeOut, ya que al TimeOut le dimos una duración de 6 segundos, mientras que Spring registrará
+la llamada como lenta porque la llamada dura 5 segundos en resolverse (así le definimos un sleep
+en el ProductoResources(verProducto(...))) y la registrará como lenta porque en la configuración
+le dijimos que considere una llamada lenta si el tiempo de la llamada es mayor al umbral de
+duración de llamada lenta (slowCallDurationThreshold(Duration.ofSeconds(2L))).
