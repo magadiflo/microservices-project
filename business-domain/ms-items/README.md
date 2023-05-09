@@ -178,3 +178,45 @@ espera en estado abierto, etc. de esa forma sobreescribimos los criterios que po
 
 Todos los circuit breaker que tengamos en la aplicación pasarán por ese factory como id, pero como solo tenemos uno
 creado llamado "items", obviamente solo ese se está pasando.
+
+## Personalizando el TimeOut
+
+Configuraremos el tiempo de espera de ejecución del subproceso. El valor predeterminado es de 1 segundo.
+
+Esta configuración la realizaremos en la **personalización de los parámetros del circuit breaker** que hicimos
+anteriormente. Solo reemplazamos el **TimeLimiterConfig.ofDefaults()** por nuestro valor personalizado:
+
+````
+@Bean
+public Customizer<Resilience4JCircuitBreakerFactory> defaultCustomizer() {
+     ....................
+     ....................
+                .timeLimiterConfig(TimeLimiterConfig.custom()
+                        .timeoutDuration(Duration.ofSeconds(2L)).build())
+                .build();
+    });
+}
+````
+
+En el código anterior **cambiamos el valor del timeOut predeterminado a 2 segundos.**
+
+**NOTA**
+
+- Cada vez que ocurra un timeOut, se considerará como un error, por lo que nos mostrará,
+  según la configuración que hicimos, el método alternativo.
+- Recordar que en el ProductResource (método verProducto(...)) configuramos un sleep de
+  5 segundos para el id del producto igual a 7.
+- El circuit breaker entrará en funcionamiento con la misma configuración que hicimos en el
+  apartado de **Personalizando parámetros del Circuit Breaker**, es decir, con una ventana
+  deslizante de 10 request, duración de espera en estado abierto de 10 segundos, etc.
+
+**FUNCIONAMIENTO**
+
+- Cuando hagamos una petición con el id del producto igual a 7, ocurrirá un TimeOut, ya que se
+  ha configurado el tiempo de espera para ejecutar el subproceso en 2 segundos.
+
+````
+http://127.0.0.1:8002/api/v1/items/producto/7/cantidad/3
+````
+
+- Como respuesta, nos mostrará el camino alternativo.
