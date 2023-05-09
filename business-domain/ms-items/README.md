@@ -130,3 +130,51 @@ estado semi-abierto. Ahora, volvemos a ejecutar un request exitoso,
 y como hemos de esperar fallará, puesto que hicimos más del 50%
 de request fallidos (8) mostrándonos el camino alternativo. Así el ciclo
 se repetirá.
+
+## Personalizando parámetros del Circuit Breaker
+
+Creamos una clase de configuración con un @Bean donde retornamos
+una clase con los parámetros que le asignaremos a nuestros Circtuits Breakers.
+
+La configuración sería el siguiente:
+
+````
+@Bean
+public Customizer<Resilience4JCircuitBreakerFactory> defaultCustomizer() {
+    return factory -> factory.configureDefault(id -> {
+        LOG.info("id del circuit breaker = {}", id);
+        return new Resilience4JConfigBuilder(id)
+                .circuitBreakerConfig(CircuitBreakerConfig.custom()
+                        .slidingWindowSize(10)
+                        .failureRateThreshold(50)
+                        .waitDurationInOpenState(Duration.ofSeconds(10L))
+                        .permittedNumberOfCallsInHalfOpenState(5)
+                        .build())
+                .timeLimiterConfig(TimeLimiterConfig.ofDefaults())
+                .build();
+    });
+}
+````
+
+**DONDE:**
+
+- **slidingWindowSize(10)**, tamaño de la ventana deslizante ahora será de 10 request (será nuestro 100%).
+  Recordar que por defecto se trabajaba con 100 request.
+- **failureRateThreshold(50)**, umbral de tasa de fallas será del 50%, es decir 5 request.
+- **waitDurationInOpenState(Duration.ofSeconds(10L))**, duración de espera en estado abierto será de 10 segundos.
+  Recordar que por defecto era de 1 minuto.
+- **permittedNumberOfCallsInHalfOpenState(5)**, número de llamadas permitidas en estado semi-abierto, serán de
+  5 request. Es decir, que en ese estado ahora los 5 request serán nuestro 100%, lo que significa que al
+  tener un failureRateThreshold(50) si se tiene 3 fallas de 5, seguirá en estado abierto.
+
+**IMPORTANTE**
+
+Del método de configuración anterior el, id, es el que le damos a cada Circuit Break cuando lo creamos.
+
+En la clase ItemResource método getItem(...) creamos un circuit breaker al que le pusimos como id = "items".
+Ese id, es el que se pasa al **...factory.configureDefault(id -> {...}..** para poder configurarle los parámetros como
+el tamaño de la ventana deslizante (sobre qué cantidad de request trabajará), el umbral de tasa de fallas, el tiempo de
+espera en estado abierto, etc. de esa forma sobreescribimos los criterios que por defecto traer el circuit breaker.
+
+Todos los circuit breaker que tengamos en la aplicación pasarán por ese factory como id, pero como solo tenemos uno
+creado llamado "items", obviamente solo ese se está pasando.
