@@ -4,6 +4,7 @@ import com.magadiflo.msp.business.domain.items.app.models.Item;
 import com.magadiflo.msp.business.domain.items.app.models.Producto;
 import com.magadiflo.msp.business.domain.items.app.service.IItemService;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,6 +50,7 @@ public class ItemResource {
         return ResponseEntity.ok(this.itemService.findAll());
     }
 
+    // Usando el CircuitBreakerFactory
     @GetMapping(path = "/producto/{productoId}/cantidad/{cantidad}")
     public ResponseEntity<Item> getItem(@PathVariable Long productoId, @PathVariable Integer cantidad) {
         /**
@@ -60,6 +62,21 @@ public class ItemResource {
         return circuitBreakerFactory.create("items")
                 .run(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)),
                         e -> this.metodoAlternativo(productoId, cantidad, e));
+    }
+
+    // Usando anotaciones
+
+    /**
+     * name="items", el nombre del identificador del circuit breaker.
+     * Será el mismo que le dimos en el método getItem(...)
+     * <p>
+     * IMPORTANTE: Si usamos anotaciones, la configuración solo será aplicado
+     * vía archivo (application.yml) y no de forma programática.
+     */
+    @CircuitBreaker(name = "items", fallbackMethod = "metodoAlternativo")
+    @GetMapping(path = "/producto-2/{productoId}/cantidad/{cantidad}")
+    public ResponseEntity<Item> getItem2(@PathVariable Long productoId, @PathVariable Integer cantidad) {
+        return ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad));
     }
 
     public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad, Throwable e) {

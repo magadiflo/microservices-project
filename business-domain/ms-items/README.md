@@ -282,3 +282,40 @@ mientras que la configuración del CustomrResilience será descartada.
 **IMPORTANTE**
 
 `Usar solo una de las dos formas, ya sea mediante el archivo application.yml o la clase de configuración.`
+
+## La anotación Circuit Breaker
+
+Si usamos la anotación **@CircuitBreaker**, la configuración **solo será aplicado
+vía archivo (application.yml)** y no la que hicimos de forma programática.
+
+Recordemos que **de forma programática** aplicamos el circuit breaker en el método
+getItem(...) usando la clase abstracta **CircuitBreakerFactory**, definiendo un nombre
+para el circuit breaker y agregándole un método alternativo:
+
+````
+@GetMapping(path = "/producto/{productoId}/cantidad/{cantidad}")
+public ResponseEntity<Item> getItem(@PathVariable Long productoId, @PathVariable Integer cantidad) {
+    return circuitBreakerFactory.create("items")
+            .run(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)),
+                    e -> this.metodoAlternativo(productoId, cantidad, e));
+}
+````
+
+Ahora, haremos lo mismo pero usando la anotación **@CircuitBreaker**:
+
+````
+@CircuitBreaker(name = "items", fallbackMethod = "metodoAlternativo")
+@GetMapping(path = "/producto-2/{productoId}/cantidad/{cantidad}")
+public ResponseEntity<Item> getItem2(@PathVariable Long productoId, @PathVariable Integer cantidad) {
+    return ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad));
+}
+````
+
+Observamos en el código anterior, que le dimos el mismo nombre a nuestro circuit breaker ("items"),
+además en el fallbackMethod, colocamos el método a donde se nos redireccionará en caso de que
+falle la llamada.
+
+**FUNCIONAMIENTO**
+
+Las pruebas ahora se harán al este nuevo endPoint y deberá tener el mismo comportamiento
+de las pruebas que hemos venido realizando hasta ahora.
