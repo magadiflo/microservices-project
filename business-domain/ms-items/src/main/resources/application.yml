@@ -1,0 +1,27 @@
+resilience4j:
+  circuitbreaker:
+    configs:
+      # defecto, es el nombre que le daremos a esta configuración
+      defecto:
+        sliding-window-size: 6
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 4
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+    instances:
+      # items, es el id que le dimos a un circuit breaker factory definido en el controlador de este microservicio
+      items:
+        # le asignamos el nombre de la configuración que hicimos en este CircuitBreaker
+        base-config: defecto
+  # Configurando el TimeOut
+  timelimiter:
+    configs:
+      # defecto, el nombre que le damos a esta configuración
+      defecto:
+        timeout-duration: 2s
+    instances:
+      # items, el id que le dimos al circuit breaker definido en el controlador de este microservicio
+      items:
+        # Le asignamos el nombre de la configuración que hicimos en este TimeLimiter
+        base-config: defecto

@@ -256,7 +256,7 @@ public Customizer<Resilience4JCircuitBreakerFactory> defaultCustomizer() {
 
 **NOTA**
 
-El timeOut siempre ocurre primero que las llamadas lentas. Al umbral de duración de
+**El timeOut siempre ocurre primero que las llamadas lentas**. Al umbral de duración de
 llamadas lentas le dimos una duración de 2 segundos, mismo tiempo que tenía
 el timeOut configurado anteriormente, por lo tanto, para poder ver el tema de las llamadas lentas,
 subimos el TimeOut en 6 segundos, que incluso es un valor mayor al sleep(5 segundos) que le
@@ -271,3 +271,14 @@ la llamada como lenta porque la llamada dura 5 segundos en resolverse (así le d
 en el ProductoResources(verProducto(...))) y la registrará como lenta porque en la configuración
 le dijimos que considere una llamada lenta si el tiempo de la llamada es mayor al umbral de
 duración de llamada lenta (slowCallDurationThreshold(Duration.ofSeconds(2L))).
+
+## Configurando Resilience4J en el application.yml
+
+La configuración que hagamos en el archivo application.yml tendrá mayor prioridad que nuestra
+clase de configuración CustomResilience, pero en ambos estamos haciendo lo mismo. Esto significa
+que la configuración que se aplicará será la configuración que está en el application.yml,
+mientras que la configuración del CustomrResilience será descartada.
+
+**IMPORTANTE**
+
+`Usar solo una de las dos formas, ya sea mediante el archivo application.yml o la clase de configuración.`
