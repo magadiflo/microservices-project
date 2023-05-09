@@ -62,3 +62,71 @@ public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad)
     return ResponseEntity.ok(item);
 }
 ````
+
+## Probando Resilience con criterios por defecto
+
+Para probar las configuraciones por defecto de Resilience, debemos hacer
+una pequeña modificación al método que desde este ms-items se llama. Ese método
+es verProducto(...) y está en el ms-productos.
+
+Agregamos una pequeña validación, de tal forma que cuando se llame
+por un producto **id=10** lance una excepción, y si se llama a un producto
+con **id=7** se aplique un tiempo de demora de 5 segundos.
+
+````
+# En el ms-productos
+
+@GetMapping(path = "/{id}")
+public ResponseEntity<Producto> verProducto(@PathVariable Long id) throws InterruptedException {
+    
+    //* Simulando errores (Usuario no encontrado y demora en la ejecución del método)
+    if(id.equals(10L)) throw new IllegalStateException("Producto no encontrado!");
+    if(id.equals(7L)) TimeUnit.SECONDS.sleep(5L);
+    //* Simulando errores
+    
+    Producto producto = this.productoService.findById(id);
+    return ResponseEntity.ok(this.productoConPuerto(producto));
+}
+````
+
+Las configuraciones por defecto son:
+
+- Tiene una ventana deslizante de 100 request (100%)
+- Tasa de errores (+51%)
+
+**FUNCIONAMIENTO:**
+
+Hacemos 100 request, haciendo fallar más del 50%. Ejm. 60 request,
+enviando el id del producto a 10.
+
+````
+http://127.0.0.1:8002/api/v1/items/producto/10/cantidad/3
+````
+
+Ahora, como el método getItem(...) tiene asignado programáticamente un método alternativo,
+en cada falla mostrará dicho método alternativo. Ahora, si 60 request fallaron,
+los 40 restantes hacemos que sean exitosos enviando un id del producto igual a 1, por ejemplo.
+
+````
+http://127.0.0.1:8002/api/v1/items/producto/1/cantidad/3
+````
+
+Al completarse los 100 request, el siguiente, fallará, así sea que el
+id del producto sea válido o un request con todas las de ser exitoso,
+mostrará el método alternativo, iniciando el Circuit Breaker, es decir,
+pasará a un estado de **OPEN**.
+
+````
+CircuitBreaker 'items' is OPEN and does not permit further calls
+````
+
+**Resilience** espera un minuto para pasar a un estado de **semi-abierto**.
+Habiendo pasado el minuto (estando ya en el estado semi-abierto), la
+ventana deslizante ahora tiene un valor de 10 request (100%). Si volvemos
+a fallar más del 50% de request, por ejemplo 8 request, en cada falla
+seguirá mostrando el camino alternativo. Luego de las 8 request falladas,
+hacemos 2 request exitosas, completándose con eso las 10 request del
+estado semi-abierto. Ahora, volvemos a ejecutar un request exitoso,
+y como hemos de esperar fallará, puesto que hicimos más del 50%
+de request fallidos (8) mostrándonos el camino alternativo. Así el ciclo
+se repetirá.
