@@ -17,6 +17,7 @@
     <modules>
         <module>ms-eureka-server</module>
         <module>ms-spring-cloud-gateway</module>
+        <module>ms-config-server</module>
     </modules>
 
 </project>
