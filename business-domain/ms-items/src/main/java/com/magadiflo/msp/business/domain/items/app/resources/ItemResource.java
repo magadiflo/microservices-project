@@ -5,6 +5,7 @@ import com.magadiflo.msp.business.domain.items.app.models.Producto;
 import com.magadiflo.msp.business.domain.items.app.service.IItemService;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping(path = "/api/v1/items")
@@ -79,6 +81,13 @@ public class ItemResource {
         return ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad));
     }
 
+    @CircuitBreaker(name = "items", fallbackMethod = "metodoAlternativo2")
+    @TimeLimiter(name = "items")
+    @GetMapping(path = "/producto-3/{productoId}/cantidad/{cantidad}")
+    public CompletableFuture<ResponseEntity<Item>> getItem3(@PathVariable Long productoId, @PathVariable Integer cantidad) {
+        return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)));
+    }
+
     public ResponseEntity<Item> metodoAlternativo(Long productoId, Integer cantidad, Throwable e) {
         LOG.info("[Dentro del método alternativo] mensaje de error: {}", e.getMessage());
         Producto producto = new Producto();
@@ -91,5 +100,19 @@ public class ItemResource {
         item.setProducto(producto);
 
         return ResponseEntity.ok(item);
+    }
+
+    public CompletableFuture<ResponseEntity<Item>> metodoAlternativo2(Long productoId, Integer cantidad, Throwable e) {
+        LOG.info("[Dentro del método alternativo] mensaje de error: {}", e.getMessage());
+        Producto producto = new Producto();
+        producto.setId(productoId);
+        producto.setNombre("Cámara Sony");
+        producto.setPrecio(500D);
+
+        Item item = new Item();
+        item.setCantidad(cantidad);
+        item.setProducto(producto);
+
+        return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(item));
     }
 }

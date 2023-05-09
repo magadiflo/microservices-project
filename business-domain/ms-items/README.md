@@ -319,3 +319,36 @@ falle la llamada.
 
 Las pruebas ahora se harán al este nuevo endPoint y deberá tener el mismo comportamiento
 de las pruebas que hemos venido realizando hasta ahora.
+
+## La anotación @TimeLimiter
+
+- La anotación @TimeLimiter nos permite configurar el **TimeOut** al método que tenga esa anotación.
+- La anotación @TimeLimiter requiere que el tipo de dato devuelto por método anotado esté envuelto
+  en un **CompletableFuture<...>**, lo mismo debe ocurrir con su método fallback.
+- La anotación @TimeLimiter, tiene un atributo para colocar el método de retorno (fallbackMethod), pero
+  como estamos combinándolo con la anotación **@CircuitBreaker**, el manejo del método alternativo **es importante
+  que solo esté en esta última anotación**, ya que si se le pone también en el @TimeLimiter no funcionará. Bueno,
+  esto, siempre y cuando ambas anotaciones trabajen juntas, tal como se muestra a continuación:
+
+````
+@CircuitBreaker(name = "items", fallbackMethod = "metodoAlternativo2")
+@TimeLimiter(name = "items")
+@GetMapping(path = "/producto-3/{productoId}/cantidad/{cantidad}")
+public CompletableFuture<ResponseEntity<Item>> getItem3(@PathVariable Long productoId, @PathVariable Integer cantidad) {
+    return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(this.itemService.findByProductId(productoId, cantidad)));
+}
+
+public CompletableFuture<ResponseEntity<Item>> metodoAlternativo2(Long productoId, Integer cantidad, Throwable e) {
+    LOG.info("[Dentro del método alternativo] mensaje de error: {}", e.getMessage());
+    Producto producto = new Producto();
+    producto.setId(productoId);
+    producto.setNombre("Cámara Sony");
+    producto.setPrecio(500D);
+
+    Item item = new Item();
+    item.setCantidad(cantidad);
+    item.setProducto(producto);
+
+    return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(item));
+}
+````
