@@ -1,3 +1,29 @@
+# Trabajando con Resilience4J
+resilience4j:
+  circuitbreaker:
+    configs:
+      defecto:
+        sliding-window-size: 6
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 4
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+    instances:
+      # productos, id que le damos al circuit breaker
+      productos:
+        base-config: defecto
+  # Configurando el TimeOut
+  timelimiter:
+    configs:
+      defecto:
+        timeout-duration: 2s
+    instances:
+      # productos, id que le damos al circuit breaker
+      productos:
+        base-config: defecto
+
+# Configuraciones de Spring Cloud Gateway: predicados, filtros
 spring:
   cloud:
     gateway:
@@ -8,6 +34,15 @@ spring:
           predicates:
             - Path=/api-base/productos-base/**
           filters:
+            # productos, id que le pusimos al Circuit Breaker en la configuración superior (resilience4j)
+            # statusCodes: 500, para que pueda manejar el "Internal Server Error" status 500
+            # fallbackUri, da un servicio alternativo cuando se abra el circuito. Tiene que ser uno distinto al
+            # cual falla, porque si no se estará llamando de manera recursiva en un ciclo infinito
+            - name: CircuitBreaker
+              args:
+                name: productos
+                statusCodes: 500
+                fallbackUri: forward:/api-base/items-base/api/v1/items/producto/5/cantidad/5
             # 2, porque el path (/api-base/productos-base/**) está compuesta por 2 segmentos: api-base y productos-base
             - StripPrefix=2
             # Aplicando este filtro solo a ms-productos

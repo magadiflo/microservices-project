@@ -169,3 +169,79 @@ spring:
           ......
           ......
 ````
+
+## Trabajando con Resilience4J
+
+Para trabajar con Resilience4J en Spring Cloud Gateway necesitamos agregar la
+dependencia de **reactor con resilience4J**:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+</dependency>
+````
+
+## Configurando el Circuit Breaker en Spring Cloud Gateway con Resilience4J
+
+La configuración es similar al que definimos en el ms-items. En este caso, en el application.yml
+de Spring Cloud Gateway, ya teníamos la configuración de Gateway. Agregaremos la configuración
+de Resilience4J en el mismo archivo:
+
+`El id que le dimos al circuit breaker será 'productos' ya que lo aplicaremos en dicho microservicio`
+
+````
+# Trabajando con Resilience4J
+resilience4j:
+  circuitbreaker:
+    configs:
+      defecto:
+        sliding-window-size: 6
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 20s
+        permitted-number-of-calls-in-half-open-state: 4
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+    instances:
+      # productos, id que le damos al circuit breaker
+      productos:
+        base-config: defecto
+  # Configurando el TimeOut
+  timelimiter:
+    configs:
+      defecto:
+        timeout-duration: 2s
+    instances:
+      # productos, id que le damos al circuit breaker
+      productos:
+        base-config: defecto
+````
+
+Modificamos la configuración que teníamos inicialmente de Spring Cloud Gateway para
+agregarle el Circuit Breaker, el fallbackUri cuando haya una excepción, etc.
+
+````
+# Configuraciones de Spring Cloud Gateway: predicados, filtros
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: ms-productos
+          uri: lb://ms-productos
+          predicates:
+            - Path=/api-base/productos-base/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: productos
+                statusCodes: 500
+                fallbackUri: forward:/api-base/items-base/api/v1/items/producto/5/cantidad/5
+            ......
+            ......
+````
+
+- **name: productos**, id que le pusimos al Circuit Breaker en la configuración superior (resilience4j).
+- **statusCodes: 500**, para que pueda manejar el "Internal Server Error" status 500.
+- **fallbackUri**, da un servicio alternativo cuando se abra el circuito. Tiene que ser uno distinto al
+  cual falla, porque si llamamos directamente a algún servicio bajo la ruta que falla (**/api-base/productos-base/**)
+  se llamará de manera recursiva en un ciclo infinito, por eso es que pusimos la uri del servicio de items.
