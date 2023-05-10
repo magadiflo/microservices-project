@@ -69,3 +69,13 @@ http://127.0.0.1:8888/ms-items/default
 - **default**, hace referencia al ambiente (dev, prod, etc.), pero como nosotros
   solo escribirmos a secas **ms-items.properties** y no, por ejemplo un **ms-items-dev.properties**,
   por defecto si el archivo no tiene agregado un ambiente el valor será default.
+
+## Conectando a repositorio remoto
+
+Creamos un proyecto en GitHub para subir nuestras configuraciones. Enlazamos nuestro repositorio local al remoto.
+
+En el application.properties agregamos la configuración con la url de nuestro repositorio remoto:
+
+````
+spring.cloud.config.server.git.uri=https://github.com/magadiflo/config-server-repo.git
+````
