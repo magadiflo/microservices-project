@@ -352,3 +352,101 @@ public CompletableFuture<ResponseEntity<Item>> metodoAlternativo2(Long productoI
     return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(item));
 }
 ````
+
+---
+
+## Agregando dependencia del Config Client
+
+Haremos que este microservicio sea un cliente que se conecta a un Spring Cloud Config
+Server (ms-config-server) para obtener la configuración de la aplicación.
+
+Debemos agregar en los microservicios que serán cliente la siguiente dependencia:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+````
+
+## Configuración deprecada
+
+[Fuente 01: StackOverflow](https://stackoverflow.com/questions/67507452/no-spring-config-import-property-has-been-defined)
+
+En el curso, adicionalmente a la dependencia de Config Client, se agrega esta otra dependencia:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-bootstrap</artifactId>
+</dependency>
+````
+
+Según investigué, como se está haciendo uso del archivo **bootstrap.properties**, para que este archivo
+funcione en esta versión más actual de Spring Boot, es necesario agregar la dependencia anterior. Y esto
+es porque Spring Cloud Client ha cambiado y, técnicamente, los archivos **bootstrap.properties** o
+**bootstrap.yml** están deprecados, pero si se quiere aún usarlos en estas versiones actuales de
+Spring Boot, es necesario la dependencia anterior.
+
+## Configuración actual
+
+[Fuente 02: Baeldung](https://www.baeldung.com/spring-cloud-configuration)  
+[Fuente 03: Doc. Spring](https://docs.spring.io/spring-cloud-config/docs/current/reference/html/)
+
+Para obtener las configuraciones de nuestro servidor de configuración, la configuración debe colocarse en el archivo
+**application.properties.**
+
+**Spring Boot 2.4** introdujo una nueva forma de cargar datos de configuración mediante la
+propiedad **spring.config.import**, que ahora es la forma predeterminada de enlazar con Config Server.
+
+Además del **nombre de la aplicación**, también ponemos el **perfil activo** y los **detalles de conexión** en nuestra
+aplicación.properties.
+
+Por el momento tendremos estas dos configuraciones:
+
+````
+spring.application.name=ms-items
+spring.config.import=optional:configserver:http://localhost:8888
+````
+
+**NOTA**
+
+`En algunos casos, es posible que deseemos que falle el inicio de un servicio si no puede conectarse al servidor de
+configuración. Si este es el comportamiento deseado, podemos eliminar el prefijo optional: para hacer que el cliente
+se detenga con una excepción.`
+
+Recordar que, en el repositorio local creamos un archivo properties para el ms-items sin perfil:
+
+````
+ms-items.properties
+````
+
+Si quisiéramos crear archivos de propiedad para un perfil en específico (developmen,
+production, staging, etc..) solo debemos agregarlo a continuación del nombre:
+
+````
+<nombre_de_la_aplicación>-<ambiente>.properties
+
+ ms-items-development.properties
+````
+
+**IMPORTANTE**
+
+Por defecto, si solo definimos el archivo **ms-items.properties** en el repositorio, y no definimos ninguna
+configuración para el pefil en el application.properties, dicho archivo (ms-items.properties) será
+tomado como predeterminado. Pero si agregamos perfiles de configuraciones en el repositorio,
+por ejemplo:
+
+````
+ms-items.properties
+ms-items-development.properties
+ms-items-production.properties
+ms-items-staging.properties
+````
+
+Y quisiéramos obtener el perfil de **development** cuando arranque la aplicación, en el
+application.properties del ms-items debemos agregar la siguiente configuración:
+
+````
+spring.profiles.active=development
+````
