@@ -451,6 +451,13 @@ application.properties del ms-items debemos agregar la siguiente configuración:
 spring.profiles.active=development
 ````
 
+Lo que sucederá es que tomará las configuraciones del repositorio tanto del archivo por default
+**(ms-items.properties)** como del archivo cuyo perfil ha sido definido **(ms-items-development.properties)**,
+es decir, combinará las propiedades de ambos archivos, y si ambos archivos tienen la misma configuración,
+el archivo del perfil seleccionado sobreescribirá al del archivo por default. Por ejemplo, en ambos archivos
+tenemos la propiedad **configuracion.texto**, el valor que finalmente tomará será el del
+ms-items-development.properties.
+
 ## Viendo configuraciones según perfil desde el servidor de configuraciones
 
 A través de la url del servidor de configuraciones podemos acceder a la información
@@ -463,3 +470,82 @@ http://127.0.0.1:8888/ms-items/production
 # Accediendo al perfil default (ms-items.properties)
 http://127.0.0.1:8888/ms-items/default
 ````
+
+---
+
+## Actualizando cambios en configuraciones con @RefreshScope y Actuator
+
+**CONTEXTO**
+
+Cuando actualizamos los archivos de propiedad ubicados en el repositorio, lo que normalmente
+haríamos para tomar los cambios en la aplicación sería reiniciar la aplicación misma,
+en este caso reiniciar el ms-items para que tome los cambios efectuados en nuestros
+archivos de configuraciones. **¿Habría otra forma de que se tomen los cambios en tiempo
+real, sin necesidad de reiniciar la aplicación?**, sí, en este caso sería usando la
+dependencia de **Spring Actuator** y la anotación **@RefreshScope**.
+
+Agregamos la dependencia de Spring Actuator:
+
+````
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+````
+
+**Spring Actuator**, admite puntos finales integrados (o personalizados) que le permiten monitorear y administrar su
+aplicación, como el
+estado de la aplicación, métricas, sesiones, etc.
+
+Agregamos la anotación @RefreshScope en el componente que inyecta la configuración, en nuestro
+caso en el controlador del ms-items:
+
+````
+@RefreshScope
+@RestController
+@RequestMapping(path = "/api/v1/items")
+public class ItemResource {...}
+````
+
+**@RefreshScope**, permite a las clases que estén anotadas con @Component, @Controllers, @Services, etc.
+poder actualizar las dependencias que están siendo inyectadas, como por ejemplo en nuestro controlador
+del ms-items, tenemos la dependencia del Environment que está siendo inyectada a través del constructor,
+o si tenemos alguna otra dependencia que esté siendo inyectada con @Autowired o @Value, los va a actualizar.
+
+Entonces, el @RefreshScope actualiza, refresca el contexto, hace nuevamente la inyección y vuelve a actualizar
+el componente con los cambios reflejados en tiempo real y sin necesidad de reiniciar la aplicación. Todo eso,
+a través de una ruta url (endpoint) de Spring Actuator.
+
+Ahora, es necesario habilitar los endPoint de Spring Actuator agregando la siguiente configuración
+en el application.properties:
+
+````
+management.endpoints.web.exposure.include=*
+````
+
+Podemos indicar separados por coma las url de los endpoints, pero mejor usamos el * para indicar
+que habilite todos los endpoints de Spring Actuator, eso incluye el **/refresh** quien
+precisamente es el que nos permitirá actualizar todos los componentes anotados con **@RefreshScope**
+
+**ACTUALIZANDO CAMBIOS**
+
+Luego de haber realizado las configuraciones anteriores, accedemos a la url del mismo ms-items o a través
+de Spring Cloud Gateway que apunte al ms-items. En nuestro caso lo haremos directamente al ms-items:
+
+````
+[POST] http://127.0.0.1:8005/actuator/refresh
+````
+
+**Donde**
+
+- **8005**, es el puerto que definimos en el **ms-items.properties** del repositorio.
+- **/actuator**, con ese término inician los endpoints de Spring Actuator.
+- **/refresh**, es el endPoint que nos permitirá actualizar los cambios.
+
+**Importante**
+
+- Solo podemos cambiar las configuraciones propias, es decir las que nosotros creamos,
+  por ejemplo, creamos la siguiente configuración: **configuracion.texto**, es una
+  configuración propia, por lo tanto podemos actualizar sus valores.
+- Si son configuraciones propias de Spring Boot, como el puerto, o conexiones a base de datos, etc..
+  para dichas configuraciones **sí estamos obligados a reiniciar el microservicio**.
