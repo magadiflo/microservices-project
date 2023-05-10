@@ -450,3 +450,16 @@ application.properties del ms-items debemos agregar la siguiente configuración:
 ````
 spring.profiles.active=development
 ````
+
+## Viendo configuraciones según perfil desde el servidor de configuraciones
+
+A través de la url del servidor de configuraciones podemos acceder a la información
+contenida en los distintos perfiles que agregamos en el repositorio.
+
+````
+# Accediendo al perfil production (ms-items-production.properties)
+http://127.0.0.1:8888/ms-items/production
+
+# Accediendo al perfil default (ms-items.properties)
+http://127.0.0.1:8888/ms-items/default
+````

@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,14 +25,16 @@ import java.util.concurrent.CompletableFuture;
 public class ItemResource {
     private final IItemService itemService;
     private final CircuitBreakerFactory circuitBreakerFactory;
+    private final Environment environment;
     private static final Logger LOG = LoggerFactory.getLogger(ItemResource.class);
 
     @Value("${configuracion.texto}")
     private String texto;
 
-    public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory) {
+    public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
         this.itemService = itemService;
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.environment = environment;
     }
 
     /**
@@ -137,6 +140,12 @@ public class ItemResource {
         Map<String, Object> map = new HashMap<>();
         map.put("texto", this.texto);
         map.put("puerto", puerto);
+
+        if(environment.getActiveProfiles().length > 0 && environment.getActiveProfiles()[0].equals("development")) {
+            map.put("nombre", environment.getProperty("configuracion.autor.nombre"));
+            map.put("email",  environment.getProperty("configuracion.autor.email"));
+        }
+
         return ResponseEntity.ok(map);
     }
 }
