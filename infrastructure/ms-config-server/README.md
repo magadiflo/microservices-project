@@ -9,7 +9,7 @@ Para definir este microservicio como un servidor de configuraciones debemos anot
 En el application.properties agregamos la configuración del **Repositorio Local**
 
 ````
-spring.cloud.config.server.git.uri=file:///M:/PROGRAMACION/DESARROLLO_JAVA_SPRING/INTELLIJ_IDEA/01.udemy/02.udemy_andres_guzman/04.repaso/microservices-project/config-server-repo
+spring.cloud.config.server.git.uri=file:///M:/PROGRAMACION/DESARROLLO_JAVA_SPRING/INTELLIJ_IDEA/01.udemy/02.udemy_andres_guzman/04.repaso/config-server-repo
 ````
 
 **Donde**
@@ -49,3 +49,23 @@ En el servidor de configuraciones tenemos configurado el puerto para el ms-items
 mientras que en el proyecto mismo del ms-items lo tenemos configurado en 8002. Cuando
 arranque la aplicación, el puerto que tomará será el del servidor de configuraciones.
 ````
+
+## Viendo configuraciones desde el ms-config-server
+
+Por cada microservicio podemos ver sus archivos .properties.
+
+A continuación, veremos el archivo .properties que creamos en el servidor de configuraciones,
+para ser más exactos en nuestro repositorio local, veremos el archivo **ms-items.properties**
+a través de la siguiente url:
+
+````
+http://127.0.0.1:8888/ms-items/default
+````
+
+**Donde**
+
+- **8888**, es el puerto que le definimos al ms-config-server.
+- **ms-items**, el nombre que le pusimos al archivo properties.
+- **default**, hace referencia al ambiente (dev, prod, etc.), pero como nosotros
+  solo escribirmos a secas **ms-items.properties** y no, por ejemplo un **ms-items-dev.properties**,
+  por defecto si el archivo no tiene agregado un ambiente el valor será default.
