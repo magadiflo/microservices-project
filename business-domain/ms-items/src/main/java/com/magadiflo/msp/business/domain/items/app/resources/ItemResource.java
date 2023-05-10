@@ -9,11 +9,14 @@ import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -22,6 +25,9 @@ public class ItemResource {
     private final IItemService itemService;
     private final CircuitBreakerFactory circuitBreakerFactory;
     private static final Logger LOG = LoggerFactory.getLogger(ItemResource.class);
+
+    @Value("${configuracion.texto}")
+    private String texto;
 
     public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory) {
         this.itemService = itemService;
@@ -114,5 +120,23 @@ public class ItemResource {
         item.setProducto(producto);
 
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(item));
+    }
+
+    /**
+     * Dos formas de inyectar con @Value
+     * 1° forma, anotarlo en un atributo de la clase:
+     *      @Value("${configuracion.texto}")
+     *      private String texto;
+     * 2° forma, inyectarlo en el parámetro del método
+     *      ..obtenerConfiguracion(@Value("${server.port}") String puerto) {...}
+     */
+    @GetMapping(path = "/config")
+    public ResponseEntity<?> obtenerConfiguracion(@Value("${server.port}") String puerto) {
+        LOG.info("texto: {}, puerto: {}", this.texto, puerto);
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("texto", this.texto);
+        map.put("puerto", puerto);
+        return ResponseEntity.ok(map);
     }
 }
