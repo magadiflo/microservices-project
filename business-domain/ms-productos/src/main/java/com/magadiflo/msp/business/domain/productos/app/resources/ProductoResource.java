@@ -42,6 +42,20 @@ public class ProductoResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(this.productoConPuerto(this.productoService.save(producto)));
     }
 
+    @PutMapping(path = "/{id}")
+    public ResponseEntity<Producto> actualizarProducto(@PathVariable Long id, @RequestBody Producto producto) {
+        Producto productoBD = this.productoService.findById(id);
+        productoBD.setNombre(producto.getNombre());
+        productoBD.setPrecio(producto.getPrecio());
+        return ResponseEntity.ok(this.productoService.save(productoBD));
+    }
+
+    @DeleteMapping(path = "/{id}")
+    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id) {
+        this.productoService.deleteById(id);
+        return ResponseEntity.noContent().build();
+    }
+
     private Producto productoConPuerto(Producto producto) {
         producto.setPort(Integer.valueOf(Objects.requireNonNull(this.environment.getProperty("local.server.port"))));
         return producto;
