@@ -57,3 +57,17 @@ aunque no la usaremos aquí, solo es para que no nos arroje el error de autconfi
     <scope>runtime</scope>
 </dependency>
 ````
+
+**SEGUNDA SOLUCIÓN**
+
+Como este proyecto es de librería, no necesitamos ninguna configuración de un string de conexión a BD, solo necesitamos
+las dependencias de Spring Data JPA, pero no conectarnos. Por lo tanto, **eliminaremos la dependencia de H2** y en
+**la clase principal deshabilitamos la Autoconfiguración del DataSource**:
+
+````
+@SpringBootApplication
+@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
+public class MsCommonsApplication {
+
+}
+````
