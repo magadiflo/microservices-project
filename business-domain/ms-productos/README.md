@@ -69,3 +69,58 @@ La propiedad mostrada arriba simplemente toma las otras propiedades, las combina
 encuentra
 un spring.application.instance_id en el entorno, utilizará un valor aleatorio en su lugar. Puede anularlo como desee,
 pero debe ser único.
+
+## Agregando el proyecto commons como dependencia
+
+Para reutilizar nuestra clase Producto tanto por este microservicio como por el ms-items,
+creamos un proyecto de librería (ms-commons). Nuestro ms-productos necesita un Entity Producto
+(con anotaciones de Spring Data Jpa) y nuestro ms-items únicamente un Pojo.
+
+Para usar la Entity Producto de la librería ms-commons, necesitamos agregar en el pom.xml de este
+microservicio, su dependencia:
+
+````
+<dependency>
+    <groupId>com.magadiflo.msp.shared.library</groupId>
+    <artifactId>ms-commons</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</dependency>
+````
+
+Modificamos las importaciones en todos las clases e interfaces que hacen
+uso de la clase Producto para que apunten al de la librería agregada. Además,
+como ahora usamos la librería, eliminamos el package con la clase Producto
+de este microservicio.
+
+Finalmente, necesitamos decirle a Spring que nuestra **Clase Entity Producto** la escanee de otro
+paquete (las del proyecto de librería):
+
+````
+@EntityScan(basePackages = {"com.magadiflo.msp.shared.library.commons.app.models.entity"})
+````
+
+Esto nos **permite registrar el package donde tenemos la clase de hibernate/jpa**,
+pero en un **CONTEXTO DE PERSISTENCIA**.
+
+Nuestra clase principal quedaría así:
+
+````
+@EnableEurekaClient
+@SpringBootApplication
+@EntityScan(basePackages = {"com.magadiflo.msp.shared.library.commons.app.models.entity"})
+public class MsProductosApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(MsProductosApplication.class, args);
+    }
+
+}
+````
+
+**IMPORTANTE**
+
+`Nuestro ms-items también hace uso de la clase Producto de la librería ms-commons, pero como dicho
+microservicio no maneja persistencia jpa, es decir, solo necesitamos usar la clase como un POJO y no como
+una clase Entity, por lo tanto no necesitamos agregarle la anotación @EntityScan(...), pero si
+tuviéramos un servicio con persistencia (tal como este ms-productos) y necesitamos esa clase para
+trabajar con CRUD Repository, JPA/Hibernate, etc... ahí sí que sería necesario agregar la anotación`.

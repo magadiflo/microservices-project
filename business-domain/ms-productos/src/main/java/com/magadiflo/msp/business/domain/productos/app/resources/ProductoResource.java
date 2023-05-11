@@ -1,7 +1,7 @@
 package com.magadiflo.msp.business.domain.productos.app.resources;
 
-import com.magadiflo.msp.business.domain.productos.app.models.entity.Producto;
 import com.magadiflo.msp.business.domain.productos.app.service.IProductoService;
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

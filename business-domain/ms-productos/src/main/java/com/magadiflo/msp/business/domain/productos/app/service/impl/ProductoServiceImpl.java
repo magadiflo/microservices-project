@@ -1,8 +1,8 @@
 package com.magadiflo.msp.business.domain.productos.app.service.impl;
 
-import com.magadiflo.msp.business.domain.productos.app.models.entity.Producto;
 import com.magadiflo.msp.business.domain.productos.app.repository.IProductoRepository;
 import com.magadiflo.msp.business.domain.productos.app.service.IProductoService;
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
