@@ -549,3 +549,56 @@ de Spring Cloud Gateway que apunte al ms-items. En nuestro caso lo haremos direc
   configuración propia, por lo tanto podemos actualizar sus valores.
 - Si son configuraciones propias de Spring Boot, como el puerto, o conexiones a base de datos, etc..
   para dichas configuraciones **sí estamos obligados a reiniciar el microservicio**.
+
+---
+
+## Agregando el proyecto commons como dependencia
+
+Para reutilizar nuestra clase Producto tanto por este microservicio como por el ms-productos,
+creamos un proyecto de librería (ms-commons). **Este ms-items solo necesita un POJO**.
+
+Para usar la clase POJO Producto de la librería ms-commons, necesitamos agregar en el pom.xml de este
+microservicio, su dependencia:
+
+````
+<dependency>
+    <groupId>com.magadiflo.msp.shared.library</groupId>
+    <artifactId>ms-commons</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</dependency>
+````
+
+Modificamos las importaciones en todos las clases e interfaces que hacen
+uso de la clase Producto para que apunten al de la librería agregada.
+
+Además, como ahora usamos la librería, **eliminamos solo la clase Producto de este microservicio**.
+
+**IMPORTANTE**
+
+`Nuestro ms-items también hace uso de la clase Producto de la librería ms-commons, pero como dicho
+microservicio no maneja persistencia jpa, es decir, solo necesitamos usar la clase como un POJO y no como
+una clase Entity, por lo tanto no necesitamos agregarle la anotación @EntityScan(...), pero si
+tuviéramos un servicio con persistencia (tal como el ms-productos) y necesitamos esa clase para
+trabajar con CRUD Repository, JPA/Hibernate, etc... ahí sí que sería necesario agregar la anotación`.
+
+Ahora, como estamos agregando un proyecto de librería que tiene como dependencia a
+Spring Data JPA, al ejecutar el proyecto nos mostrará un error diciéndonos que requiere conexión a BD, ya que en el
+proyecto commons se usa la dependencia Spring Data JPA y nos está obligando a agregar una dependencia de BD. Para
+solucionar el error, haremos lo mismo que hicimos dentro de la clase principal de la dependencia de
+ms-commons, agregarle la anotación **@EnableAutoConfiguration**.
+
+````
+@EnableEurekaClient
+@EnableFeignClients
+@SpringBootApplication
+@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
+public class MsItemsApplication {
+
+	public static void main(String[] args) {
+		SpringApplication.run(MsItemsApplication.class, args);
+	}
+
+}
+````
+
+Ahora, si en este proyecto quisieramos BD debemos quitar esta anotación y configurar la URL de conexión.

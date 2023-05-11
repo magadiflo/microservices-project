@@ -2,8 +2,8 @@ package com.magadiflo.msp.business.domain.items.app.service.impl;
 
 import com.magadiflo.msp.business.domain.items.app.clients.IProductoClienteFeign;
 import com.magadiflo.msp.business.domain.items.app.models.Item;
-import com.magadiflo.msp.business.domain.items.app.models.Producto;
 import com.magadiflo.msp.business.domain.items.app.service.IItemService;
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

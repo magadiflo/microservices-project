@@ -1,5 +1,7 @@
 package com.magadiflo.msp.business.domain.items.app.models;
 
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
+
 public class Item {
     private Producto producto;
     private Integer cantidad;

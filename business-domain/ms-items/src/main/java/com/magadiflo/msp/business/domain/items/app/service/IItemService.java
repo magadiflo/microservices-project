@@ -1,7 +1,7 @@
 package com.magadiflo.msp.business.domain.items.app.service;
 
 import com.magadiflo.msp.business.domain.items.app.models.Item;
-import com.magadiflo.msp.business.domain.items.app.models.Producto;
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
 
 import java.util.List;
 

@@ -1,6 +1,6 @@
 package com.magadiflo.msp.business.domain.items.app.clients;
 
-import com.magadiflo.msp.business.domain.items.app.models.Producto;
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 

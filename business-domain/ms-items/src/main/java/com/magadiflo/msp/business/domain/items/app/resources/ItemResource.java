@@ -1,9 +1,9 @@
 package com.magadiflo.msp.business.domain.items.app.resources;
 
 import com.magadiflo.msp.business.domain.items.app.models.Item;
-import com.magadiflo.msp.business.domain.items.app.models.Producto;
 import com.magadiflo.msp.business.domain.items.app.service.IItemService;
 
+import com.magadiflo.msp.shared.library.commons.app.models.entity.Producto;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import org.slf4j.Logger;

@@ -71,3 +71,22 @@ public class MsCommonsApplication {
 
 }
 ````
+
+## Generando el .jar usando maven
+
+En el curso, Andrés Guzmán genera el .jar del ms-commons usando la raíz de dicho microservicio
+y ejecutando el siguiente comando:
+
+````
+mvnw.cmd install
+````
+
+De esa manera, se generará el .jar del ms-commons y además se colocará el .jar en nuestro
+repositorio local de maven.
+
+**¡NOTA!**
+
+En mi caso, no ejecuté ese comando para generar el .jar manualmente, sino más bien, tan solo
+con la incorporación de la dependencia del proyecto commons en los ms-items y ms-productos,
+en automático al ejecutar dichos microservicios, y estos al tener la dependencia de ms-commons,
+en automático se genera el .jar, **NO TENGO QUE HACERLO YO**.
