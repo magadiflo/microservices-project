@@ -3,6 +3,9 @@ package com.magadiflo.msp.business.domain.items.app.service.impl;
 import com.magadiflo.msp.business.domain.items.app.models.Item;
 import com.magadiflo.msp.business.domain.items.app.models.Producto;
 import com.magadiflo.msp.business.domain.items.app.service.IItemService;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -32,5 +35,24 @@ public class ItemServiceImpl implements IItemService {
     public Item findByProductId(Long productId, Integer cantidad) {
         Producto producto = this.clienteRest.getForObject(URL_PRODUCTOS + "/{id}", Producto.class, Collections.singletonMap("id", productId));
         return new Item(producto, cantidad);
+    }
+
+    @Override
+    public Producto save(Producto producto) {
+        HttpEntity<Producto> body = new HttpEntity<>(producto);
+        ResponseEntity<Producto> exchange = this.clienteRest.exchange(URL_PRODUCTOS, HttpMethod.POST, body, Producto.class);
+        return exchange.getBody();
+    }
+
+    @Override
+    public Producto update(Long id, Producto producto) {
+        HttpEntity<Producto> body = new HttpEntity<>(producto);
+        ResponseEntity<Producto> exchange = this.clienteRest.exchange(URL_PRODUCTOS + "/{id}", HttpMethod.PUT, body, Producto.class, Collections.singletonMap("id", id));
+        return exchange.getBody();
+    }
+
+    @Override
+    public void delete(Long id) {
+        this.clienteRest.delete(URL_PRODUCTOS + "/{id}", Collections.singletonMap("id", id));
     }
 }

@@ -27,4 +27,19 @@ public class ItemServiceFeign implements IItemService {
         Producto producto = this.productoClienteFeign.verProducto(productId);
         return new Item(producto, cantidad);
     }
+
+    @Override
+    public Producto save(Producto producto) {
+        return null;
+    }
+
+    @Override
+    public Producto update(Long id, Producto producto) {
+        return null;
+    }
+
+    @Override
+    public void delete(Long id) {
+
+    }
 }

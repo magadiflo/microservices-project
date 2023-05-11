@@ -1,6 +1,7 @@
 package com.magadiflo.msp.business.domain.items.app.service;
 
 import com.magadiflo.msp.business.domain.items.app.models.Item;
+import com.magadiflo.msp.business.domain.items.app.models.Producto;
 
 import java.util.List;
 
@@ -8,4 +9,10 @@ public interface IItemService {
     List<Item> findAll();
 
     Item findByProductId(Long productId, Integer cantidad);
+
+    Producto save(Producto producto);
+
+    Producto update(Long id, Producto producto);
+
+    void delete(Long id);
 }
