@@ -37,7 +37,11 @@ Seleccionamos nuestra nueva configuración y ejecutamos el proyecto.
 
 - Para generar un puerto dinámico a la aplicación, es necesario agregar la siguiente
   configuración en el archivo de propiedades ```server.port=${PORT:0}```, donde **PORT**
-  es una variable de ambiente manejado por Spring y **0** es un valor por defecto.
+  se utiliza para referenciar a una variable de entorno en Spring Boot y **0** indica que si
+  no se encuentra ninguna variable de entorno **PORT**, se utilizará un valor predeterminado de
+  cero (0). Esto significa que si no se especifica una variable de entorno **PORT**, el servidor
+  web se ejecutará en el puero **0**, que es un valor especial en Spring Boot. **Al usar cero (0),
+  el servidor web seleccionará automáticamente un puerto disponible al azar.**
 - Ahora, en **Edit Configurations...** de IntelliJ IDEA agregamos el número de configuraciones
   (de instancias) que queremos ejecutar. Yo crearé 5 configuraciones porque quiero 5 instancias.
 - Por defecto, debe haber alguna configuración, pero sino lo hay, entonces damos en:
