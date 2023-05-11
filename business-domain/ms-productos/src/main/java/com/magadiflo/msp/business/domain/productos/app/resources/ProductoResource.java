@@ -3,11 +3,9 @@ package com.magadiflo.msp.business.domain.productos.app.resources;
 import com.magadiflo.msp.business.domain.productos.app.models.entity.Producto;
 import com.magadiflo.msp.business.domain.productos.app.service.IProductoService;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Objects;
@@ -32,11 +30,16 @@ public class ProductoResource {
     @GetMapping(path = "/{id}")
     public ResponseEntity<Producto> verProducto(@PathVariable Long id) throws InterruptedException {
         //* Simulando errores (Usuario no encontrado y demora en la ejecución del método)
-        if(id.equals(10L)) throw new IllegalStateException("Producto no encontrado!");
-        if(id.equals(7L)) TimeUnit.SECONDS.sleep(5L);
+        if (id.equals(10L)) throw new IllegalStateException("Producto no encontrado!");
+        if (id.equals(7L)) TimeUnit.SECONDS.sleep(5L);
         //* Simulando errores
         Producto producto = this.productoService.findById(id);
         return ResponseEntity.ok(this.productoConPuerto(producto));
+    }
+
+    @PostMapping
+    public ResponseEntity<Producto> crearProducto(@RequestBody Producto producto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(this.productoConPuerto(this.productoService.save(producto)));
     }
 
     private Producto productoConPuerto(Producto producto) {
