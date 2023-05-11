@@ -21,6 +21,7 @@
         <module>business-domain</module>
         <module>infrastructure</module>
         <module>legacy</module>
+        <module>shared-library</module>
     </modules>
 
     <properties>
