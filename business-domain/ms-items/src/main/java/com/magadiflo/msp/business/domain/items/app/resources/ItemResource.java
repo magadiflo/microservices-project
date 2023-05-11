@@ -34,7 +34,7 @@ public class ItemResource {
     @Value("${configuracion.texto}")
     private String texto;
 
-    public ItemResource(@Qualifier(value = "itemServiceRestTemplate") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
+    public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
         this.itemService = itemService;
         this.circuitBreakerFactory = circuitBreakerFactory;
         this.environment = environment;
