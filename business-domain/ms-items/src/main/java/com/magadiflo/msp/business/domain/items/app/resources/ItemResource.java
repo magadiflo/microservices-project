@@ -34,7 +34,7 @@ public class ItemResource {
     @Value("${configuracion.texto}")
     private String texto;
 
-    public ItemResource(@Qualifier(value = "itemServiceFeign") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
+    public ItemResource(@Qualifier(value = "itemServiceRestTemplate") IItemService itemService, CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
         this.itemService = itemService;
         this.circuitBreakerFactory = circuitBreakerFactory;
         this.environment = environment;
@@ -152,17 +152,17 @@ public class ItemResource {
         return ResponseEntity.ok(map);
     }
 
-    @PostMapping
+    @PostMapping(path = "/producto")
     public ResponseEntity<Producto> crear(@RequestBody Producto producto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(this.itemService.save(producto));
     }
 
-    @PutMapping(path = "/{id}")
+    @PutMapping(path = "/producto/{id}")
     public ResponseEntity<Producto> editar(@PathVariable Long id, @RequestBody Producto producto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(this.itemService.update(id, producto));
     }
 
-    @DeleteMapping(path = "/{id}")
+    @DeleteMapping(path = "/producto/{id}")
     public ResponseEntity<Void> eliminar(@PathVariable Long id) {
         this.itemService.delete(id);
         return ResponseEntity.noContent().build();
