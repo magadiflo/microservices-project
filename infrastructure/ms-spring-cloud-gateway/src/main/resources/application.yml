@@ -59,3 +59,9 @@ spring:
             - AddRequestHeader=token-req, 987654
             - AddResponseHeader=token-resp, 456123
             - AddRequestParameter=nombre, Martin
+        - id: ms-usuarios
+          uri: lb://ms-usuarios
+          predicates:
+            - Path=/api-base/usuarios-base/**
+          filters:
+            - StripPrefix=2
