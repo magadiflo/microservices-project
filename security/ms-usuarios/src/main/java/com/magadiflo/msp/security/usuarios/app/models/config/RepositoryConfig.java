@@ -1,8 +1,7 @@
 package com.magadiflo.msp.security.usuarios.app.models.config;
 
-
-import com.magadiflo.msp.security.usuarios.app.models.entity.Rol;
-import com.magadiflo.msp.security.usuarios.app.models.entity.Usuario;
+import com.magadiflo.msp.shared.library.usuarios.commons.app.models.entity.Rol;
+import com.magadiflo.msp.shared.library.usuarios.commons.app.models.entity.Usuario;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;

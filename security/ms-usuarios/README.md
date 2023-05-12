@@ -253,3 +253,19 @@ public class RepositoryConfig implements RepositoryRestConfigurer {
     }
 }
 ````
+
+---
+
+## Usando nuestra librería ms-usuarios-commons
+
+Al igual que se trabajó con la librería ms-commons en los ms-productos y ms-items, para nuestro ms-usuarios
+creamos una librería llamada ms-usuarios-commons que tiene como dependencia Spring Data Jpa y nuestras clases de
+Entities Usuario y Rol. Esta librería será configurada de la misma manera como la configuramos la librería ms-commons.
+
+En este microservicio ms-items necesitamos agregar en el pom.xml la dependencia del ms-usuarios-commons, borrar
+las entities Usuario y Rol del ms-usuarios, ya que ahora los importaremos de nuestra librería agregada. Finlamente,
+le decimos que use la anotación @EntityScan para que escanee del paquete de nuestra
+librería las entidades Usuario y Rol.
+
+Estas configuraciones ya no las detallo porque ya se hizo cuando se trabajó la
+librería ms-commons.

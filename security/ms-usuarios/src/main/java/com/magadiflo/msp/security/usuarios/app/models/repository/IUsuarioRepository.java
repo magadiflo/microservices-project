@@ -1,6 +1,6 @@
 package com.magadiflo.msp.security.usuarios.app.models.repository;
 
-import com.magadiflo.msp.security.usuarios.app.models.entity.Usuario;
+import com.magadiflo.msp.shared.library.usuarios.commons.app.models.entity.Usuario;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
