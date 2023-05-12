@@ -3,6 +3,8 @@ package com.magadiflo.msp.security.usuarios.app.models.entity;
 import javax.persistence.*;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
@@ -21,6 +23,13 @@ public class Usuario implements Serializable {
     private String apellido;
     @Column(unique = true, length = 100)
     private String email;
+    @JoinTable(name = "usuarios_roles",
+            joinColumns = @JoinColumn(name = "usuario_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "rol_id", referencedColumnName = "id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"usuario_id", "rol_id"})
+    )
+    @ManyToMany
+    private List<Rol> roles = new ArrayList<>();
 
     public Long getId() {
         return id;
@@ -78,6 +87,14 @@ public class Usuario implements Serializable {
         this.email = email;
     }
 
+    public List<Rol> getRoles() {
+        return roles;
+    }
+
+    public void setRoles(List<Rol> roles) {
+        this.roles = roles;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Usuario{");
@@ -88,6 +105,7 @@ public class Usuario implements Serializable {
         sb.append(", nombre='").append(nombre).append('\'');
         sb.append(", apellido='").append(apellido).append('\'');
         sb.append(", email='").append(email).append('\'');
+        sb.append(", roles=").append(roles);
         sb.append('}');
         return sb.toString();
     }
