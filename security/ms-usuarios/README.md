@@ -235,3 +235,21 @@ Optional<Usuario> findByUsername(@Param(value = "usuario") String username);
 ````
 http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/buscar-usuario?usuario=martin
 ````
+
+## Configurar y exponer id en la respuesta json
+
+Debemos agregar una clase de configuración que implemente la interfaz **RepositoryRestConfigurer**,
+que es una interfaz que permite agregar configuraciones a todo lo relacionado con Spring Data Rest.
+
+Sobre escribir el método para indicarle qué clases queremos que muestren sus ids, en nuestro caso
+le decimos que tanto la clase Usuario como Rol.
+
+````
+@Configuration
+public class RepositoryConfig implements RepositoryRestConfigurer {
+    @Override
+    public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
+        config.exposeIdsFor(Usuario.class, Rol.class);
+    }
+}
+````
