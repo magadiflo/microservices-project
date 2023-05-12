@@ -202,3 +202,36 @@ Response Body:
 
 **NOTA:** Observamos que no nos retorna el **id** del nuevo registro, más adelante
 se realiza una configuración para que **sí nos retorne el id**.
+
+## Accediendo a los métodos personalizados en los repositorios
+
+En el repositorio **IUsuarioRepository** creamos dos métodos personalizados, aunque ambos hacen lo mismo.
+Para poder acceder a ellos, tal como accedemos a los endPoints del CRUD de dicho repositorio, debemos
+hacerlo usando en la url el **/search** seguido del nombre del método y agregando params si es que el
+método lo requiere:
+
+````
+http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/findByUsername?username=magadiflo
+````
+
+**Donde**
+
+- **search**, nos indica que a partir de aquí mostraremos nuestros métodos personalizados.
+- **findByUsername**, nombre del método al cual queremos acceder vía endPoint
+- **username**, parámetro que espera recibir nuestro método personalizado
+
+## Personalizando los métodos agregados en los repositorios
+
+Podemos **definirle un nombre a los métodos** para poder **acceder a ellos vía endPoint** y no usar
+el nombre del método por defecto. Para eso debemos agregarle la anotación **@RestResource**
+definiéndole el nombre por el cual accederemos, además podemos darle un nombre distinto
+al parámetro con **@Param**:
+
+````
+@RestResource(path = "buscar-usuario")
+Optional<Usuario> findByUsername(@Param(value = "usuario") String username);
+````
+
+````
+http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/buscar-usuario?usuario=martin
+````
