@@ -16,6 +16,7 @@
 
     <modules>
         <module>ms-usuarios</module>
+        <module>ms-authorization-server</module>
     </modules>
 
 </project>
