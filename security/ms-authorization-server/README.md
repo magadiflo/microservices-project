@@ -35,3 +35,39 @@ public class MsAuthorizationServerApplication {...}
     </exclusions>
 </dependency>
 ````
+
+---
+
+## Creando nuestra interfaz Feign Client
+
+Desde este microservicio nos comunicaremos con el ms-usuarios usando **FeignClient**, para esto ya tenemos en el pom.xml
+la dependencia de Feign.
+
+Primero, habilitaremos el uso de FeignClient con la anotación **@EnableFeignClients** desde la clase principal:
+
+````
+@EnableFeignClients
+@EnableEurekaClient
+@SpringBootApplication
+public class MsAuthorizationServerApplication {...}
+````
+
+Crearemos la siguiente interfaz:
+
+````
+@FeignClient(name = "ms-usuarios", path = "/usuarios")
+public interface IUsuarioFeignClient {
+    @GetMapping(path = "/search/buscar-usuario")
+    Usuario findByUsername(@RequestParam(value = "usuario") String username);
+
+}
+````
+
+**Donde:**
+
+- **name=ms-usuarios**, corresponde al **nombre del microservicio** al que nos comunicaremos.
+- **path = "/usuarios"**, corresponde al path que le definimos al ms-usuarios. En este caso,
+  como estamos usando en el ms-usuarios Spring Data Rest, el path lo definimos dentro de la
+  anotación **@RepositoryRestResource(path = "usuarios")** aplicada a la interfaz IUsuarioRepository.
+
+El resto del código es similar a cómo hemos venido trabajando con clientes Feign.
