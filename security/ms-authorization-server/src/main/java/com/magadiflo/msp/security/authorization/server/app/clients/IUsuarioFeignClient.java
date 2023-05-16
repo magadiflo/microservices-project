@@ -5,9 +5,11 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.Optional;
+
 @FeignClient(name = "ms-usuarios", path = "/usuarios")
 public interface IUsuarioFeignClient {
     @GetMapping(path = "/search/buscar-usuario")
-    Usuario findByUsername(@RequestParam(value = "usuario") String username);
+    Optional<Usuario> findByUsername(@RequestParam(value = "usuario") String username);
 
 }

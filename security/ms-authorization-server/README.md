@@ -57,8 +57,9 @@ Crearemos la siguiente interfaz:
 ````
 @FeignClient(name = "ms-usuarios", path = "/usuarios")
 public interface IUsuarioFeignClient {
+
     @GetMapping(path = "/search/buscar-usuario")
-    Usuario findByUsername(@RequestParam(value = "usuario") String username);
+    Optional<Usuario> findByUsername(@RequestParam(value = "usuario") String username);
 
 }
 ````
@@ -69,5 +70,7 @@ public interface IUsuarioFeignClient {
 - **path = "/usuarios"**, corresponde al path que le definimos al ms-usuarios. En este caso,
   como estamos usando en el ms-usuarios Spring Data Rest, el path lo definimos dentro de la
   anotación **@RepositoryRestResource(path = "usuarios")** aplicada a la interfaz IUsuarioRepository.
+- Como tipo de dato le decimos que nos retorne un Optional de Usuario, eso lo implementará en
+  tiempo de ejecución.
 
 El resto del código es similar a cómo hemos venido trabajando con clientes Feign.
