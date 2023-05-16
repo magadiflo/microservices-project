@@ -16,7 +16,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>ms-zuul-server</module>
         <module>ms-items-legacy</module>
     </modules>
 
