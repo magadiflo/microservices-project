@@ -289,3 +289,74 @@ implementación concreta del tipo accessTokenConverter quien se encargará de to
 en el Token (JWT) codificados en base64. También creamos un @Bean **JwtTokenStore** que es una implementación
 concreta del tokenStore y es quien se encarga de traducir los **access token** hacia y desde las autenticaciones.
 Recuerde usar la misma instancia de JwtAccessTokenConverter que se usó cuando se acuñaron los tokens.
+---
+
+## Añadiendo configuración de los clientes en el Servidor de Autorización
+
+Ahora haremos las configuraciones para nuestros clientes frontend (App de angular, Android, etc.) que accederán a
+nuestros microservicios. Dependiendo del número de clientes frontend que consumirán nuestros servicios debemos
+registrarlos uno por uno con su **client_id y con su password**.
+
+La idea del estándar OAuth es proporcionar mayor seguridad. No solamente nos autenticamos con los usuarios de nuestro
+backend, sino también con las credenciales de la aplicación cliente que se comunicará con nuestro backend. Podríamos
+decir que tiene una **doble autenticación**: Por un lado, la **aplicación cliente (frontend)** y por otro con las
+**credenciales del usuario**.
+
+Para agregar la configuración a nuestros clientes implementamos el método **configure(ClientDetailsServiceConfigurer
+clients)**:
+
+````
+@Override
+public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+    clients.inMemory()
+            .withClient("frontendApp")
+            .secret(this.passwordEncoder.encode("frontendApp-12345"))
+            .scopes("read", "write")
+            .authorizedGrantTypes("password", "refresh_token")
+            .accessTokenValiditySeconds(3600)
+            .refreshTokenValiditySeconds(3600);
+}
+````
+
+**DONDE**
+
+- Usaremos **inMemory()** para guardar la configuración de los clientes, pero fácilmente se
+  puede optar por usar **Jdbc**.
+- **withClient() y secret()**, serán las credenciales que le daremos a nuestra aplicación cliente.
+- **scopes("read", "write")**, es el alcance o permiso que tendrá nuestra aplicación cliente. En este caso,
+  la aplicación podrá leer información, crear o modificar.
+- **authorizedGrantTypes("password", "refresh_token")**, nos indica cómo es que obtendremos el token. El
+  **"password"** indica que nuestros usuarios para autenticarse deben ingresar sus credenciales:
+  un **username y un password**, de esa forma obtendrán un token de acceso.
+  **refresh_token**, nos permitirá obtener un nuevo token de acceso completamente renovado.
+- **accessTokenValiditySeconds** y **refreshTokenValiditySeconds**, tiempo de validez del accessToken y
+  refreshToken, está en segundos.
+
+## Configurando AuthorizationServerSecurityConfigurer
+
+Serán los **permisos** que tendrán nuestros **endpoint** del **servidor de Autorización OAuth2** para
+generar el token y validar el token.
+
+Sobreescribimos el método configure(AuthorizationServerSecurityConfigurer security):
+
+````
+@Override
+public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+    security.tokenKeyAccess("permitAll()")
+            .checkTokenAccess("isAuthenticated()");
+}
+````
+
+**DONDE**
+
+- **permitAll()**, es el permiso de Spring Security para permitir a todos.
+- El **tokenKeyAccess(...)** es precisamente el endpoint para generar el token de autenticación con la ruta
+  ```[POST] /oauth/token```. Cada vez que nos autenticamos mediante post, enviamos las credenciales del usuario y las
+  del cliente frontend, valida estas credenciales y nos autentica. La idea es que esa ruta endpoint sea público para que
+  cualquiera acceda a generar un token, obviamente con las consideraciones ya antes mencionadas (envío de credenciales
+  de usuario y cliente frontend)
+- **checkTokenAccess(...)**, se encarga de validar el token.
+- **"isAuthenticated()"**, es un método de Spring Security que nos permite validar que el cliente esté autenticado.
+
+Para acceder a estos dos endpoints, es usando la autenticación del tipo Http Basic:
+```Authorization Basic: clientId: clientSecret```
