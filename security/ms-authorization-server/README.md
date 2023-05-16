@@ -74,3 +74,53 @@ public interface IUsuarioFeignClient {
   tiempo de ejecución.
 
 El resto del código es similar a cómo hemos venido trabajando con clientes Feign.
+
+---
+
+## Implementando servicio UserDetailsService con FeignClient
+
+Creamos una clase **UsuarioService** que implementa la interfaz
+**UserDetailsService** e implementamos su método **loadUserByUsername()**.
+Esta implementación del **UserDetailsService** nos permitirá, cuando un
+usuario se loguee, ir a buscarlo con el FeignClient al ms-usuarios. Si se encuentra
+el usuario se retorna un **UserDetails** que es un usuario propio de Spring Security y
+reconocido por éste dentro de su arquitectura. En caso de que no se encuentre el
+usuario buscado se retorna un **UsernameNotFoundException**.
+
+Nuestra implementación de la interfaz UserDetailsService quedaría así:
+
+````
+@Service
+public class UsuarioService implements UserDetailsService {
+    private static final Logger LOG = LoggerFactory.getLogger(UsuarioService.class);
+    private final IUsuarioFeignClient usuarioFeignClient;
+
+    public UsuarioService(IUsuarioFeignClient usuarioFeignClient) {
+        this.usuarioFeignClient = usuarioFeignClient;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return this.usuarioFeignClient.findByUsername(username)
+                .map(usuario -> {
+
+                    List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
+                            .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
+                            .peek(simpleGrantedAuthority -> LOG.info("Rol: {}", simpleGrantedAuthority.getAuthority()))
+                            .toList();
+
+                    UserDetails userDetails = User.builder()
+                            .username(usuario.getUsername())
+                            .password(usuario.getPassword())
+                            .authorities(authorities)
+                            .disabled(!usuario.getEnabled())
+                            .build();
+
+                    LOG.info("Detalles del usuario autenticado: {}", userDetails);
+
+                    return userDetails;
+                })
+                .orElseThrow(() -> new UsernameNotFoundException(String.format("Error en el login, no existe el usuario %s en el sistema", username)));
+    }
+}
+````
