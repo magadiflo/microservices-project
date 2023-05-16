@@ -219,3 +219,73 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
 }
 ````
+
+---
+
+## Añadiendo la configuración para el servidor de autorización en el servicio oauth (ms-authorization-server)
+
+Crearemos la **configuración del servidor de autorización** que se encarga **de todo el proceso de login** por el
+lado de **OAuth2**, todo lo que tenga que ver con el token (jwt), desde el proceso de autenticación, generar el token,
+validarlo, etc.
+
+Creamos la siguiente clase de configuración anotándolo con **@EnableAuthorizationServer** para **habilitar la clase como
+un servidor de autorización.**
+
+````
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+
+    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+    }
+    
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        endpoints.authenticationManager(this.authenticationManager)
+                .tokenStore(this.jwtTokenStore())
+                .accessTokenConverter(this.jwtAccessTokenConverter());
+    }
+
+    @Bean
+    public JwtTokenStore jwtTokenStore() {
+        return new JwtTokenStore(this.jwtAccessTokenConverter());
+    }
+
+    @Bean
+    public JwtAccessTokenConverter jwtAccessTokenConverter() {
+        JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+        jwtAccessTokenConverter.setSigningKey("mi-clave-secreta-12345");
+        return jwtAccessTokenConverter;
+    }
+}
+
+````
+
+Como vemos, estamos inyectando esta clase con los beans definidos anteriormente:
+```@Bean PasswordEncoder y AuthenticationManager```, este último contiene por debajo, nuestra implementación
+del **UserDetailsService**.
+
+Registramos el **AuthenticationManager** en nuestro authorizationServer. Para eso, sobreescribimos el método
+**configure(AuthorizationServerEndpointsConfigurer endpoints)** donde será registrado.
+
+Este método **configure(AuthorizationServerEndpointsConfigurer endpoints)**, está **relacionado con el endpoint de
+OAuth2** del servidor de autorización que se encarga de generar el token.
+
+Accediendo al endpoint siguiente, nos genera el token con esos datos enviados y retorna un JSON con el Token, siempre y
+cuando los datos sean válidos.
+
+````
+[POST] /oauth/token
+username, password, grand_type: password, {client_id, password = credenciales de la aplicación cliente}
+````
+
+Continuando con la explicación de la clase de configuración **AuthorizationServerConfig** vemos que configuramos
+el **accessTokenConverter(...)** para que sea del tipo JWT. Creamos un **@Bean JwtAccessTokenConverter** como
+implementación concreta del tipo accessTokenConverter quien se encargará de tomar los valores del usuario y convertirlos
+en el Token (JWT) codificados en base64. También creamos un @Bean **JwtTokenStore** que es una implementación
+concreta del tokenStore y es quien se encarga de traducir los **access token** hacia y desde las autenticaciones.
+Recuerde usar la misma instancia de JwtAccessTokenConverter que se usó cuando se acuñaron los tokens.
