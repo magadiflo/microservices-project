@@ -91,3 +91,100 @@ zuul.routes.security.sensitive-headers=Cookie,Set-Cookie
 La configuración ``zuul.routes.security.sensitive-headers=Cookie,Set-Cookie`` nos va a permitir
 excluir de la cabecera el **Cookie** y el **Set-Cookie,** ya que con ellos
 el servidor de autorización no funciona.
+---
+
+## Configurando Zuul como Servidor de Recurso
+
+Configuraremos el servidor de recursos, que será nuestro Zuul Server. La configuración que haremos se
+encargará de proteger todos endPoints de los distintos microservicios y dar acceso a los clientes
+que se conecten según el token que envíen en las cabeceras http del request. También se encarga de
+validar que el Token sea el correcto, con la misma firma con el cual se crea en el servidor de autorización.
+Y esto lo tenemos que configurar en Zuul Gateway, donde tenemos todas las rutas base que apuntan
+a cada microservicio.
+
+**NOTA**
+
+````
+Esta configuración solo es compatible con Zuul Server (basado en servlets) y no con Spring Cloud Gateway (basado en 
+programación reactiva)
+````
+
+### Agregando las dependencias para esta sección
+
+Agregamos las siguientes dependencias que son las mismas que usamos en el **ms-authorization-server**:
+
+````
+<dependency>
+    <groupId>org.springframework.security.oauth</groupId>
+    <artifactId>spring-security-oauth2</artifactId>
+    <version>2.3.8.RELEASE</version>
+</dependency>
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-jwt</artifactId>
+    <version>1.1.1.RELEASE</version>
+</dependency>
+<dependency>
+    <groupId>org.glassfish.jaxb</groupId>
+    <artifactId>jaxb-runtime</artifactId>
+</dependency>
+````
+
+### Creando la clase de configuración del servidor de recurso
+
+Creamos una clase de configuración al que le debemos anotar con **@EnableResourceServer** para habilitar
+la configuración **del servidor de recurso**.
+
+Copiaremos dos métodos creados en el **ms-authorization-server** y lo agregaremos en nuestra
+de configuración **ResourceServerConfig**:
+
+````
+@Bean
+public JwtTokenStore jwtTokenStore() {
+    return new JwtTokenStore(this.jwtAccessTokenConverter());
+}
+
+@Bean
+public JwtAccessTokenConverter jwtAccessTokenConverter() {
+    JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+    jwtAccessTokenConverter.setSigningKey("mi-clave-secreta-12345");
+    return jwtAccessTokenConverter;
+}
+````
+
+Esto es importante, ya que ambos servidores (resource-server - authorization-server) deben tener
+la misma firma para generar el token.
+
+Ahora, sobreescribimos dos métodos del **ResourceServerConfigurerAdapter**:
+
+**Para configurar el token**
+
+````
+@Override
+public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
+    resources.tokenStore(this.jwtTokenStore());
+}
+````
+
+**Para proteger las rutas con token**
+
+````
+@Override
+public void configure(HttpSecurity http) throws Exception {
+    http.authorizeRequests()
+            .antMatchers("/api-base/authorization-server-base/**").permitAll()
+            .antMatchers(HttpMethod.GET, "/api-base/productos-base/api/v1/productos",
+                    "/api-base/items-base/api/v1/items",
+                    "/api-base/usuarios-base/usuarios")
+            .permitAll()
+            .antMatchers(HttpMethod.GET,
+                    "/api-base/productos-base/api/v1/productos/{id}",
+                    "/api-base/items-base/api/v1/items/producto/{productoId}/cantidad/{cantidad}",
+                    "/api-base/usuarios-base/usuarios/{id}")
+            .hasAnyRole("ADMIN", "USER")
+            .antMatchers("/api-base/productos-base/**",
+                    "/api-base/items-base/**", "/api-base/usuarios-base/**")
+            .hasRole("ADMIN")
+            .anyRequest().authenticated();
+}
+````
