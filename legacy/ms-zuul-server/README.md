@@ -71,3 +71,23 @@ ribbon.ReadTimeout: 10000
   con las configuraciones realizadas, tanto en el **ms-items y ms-zuul-server** ampliando
   el tiempo de espera, podremos obtener como resultado el valor esperado, es decir el valor real
   dado por el ms-productos (no un camino alternativo, ni mucho menos un error de timeOut).
+
+---
+
+## Agregando rutas base a los microservicios de usuarios y authorization-server
+
+En el **application.properties** agregamos las rutas base que redireccionarán a
+los nuevos microservicios creados:
+
+````
+zuul.routes.usuarios.service-id=ms-usuarios
+zuul.routes.usuarios.path=/api-base/usuarios-base/**
+
+zuul.routes.security.service-id=ms-authorization-server
+zuul.routes.security.path=/api-base/authorization-server-base/**
+zuul.routes.security.sensitive-headers=Cookie,Set-Cookie
+````
+
+La configuración ``zuul.routes.security.sensitive-headers=Cookie,Set-Cookie`` nos va a permitir
+excluir de la cabecera el **Cookie** y el **Set-Cookie,** ya que con ellos
+el servidor de autorización no funciona.
