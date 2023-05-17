@@ -9,18 +9,23 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.A
 import org.springframework.security.oauth2.config.annotation.web.configuration.EnableAuthorizationServer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerEndpointsConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configurers.AuthorizationServerSecurityConfigurer;
+import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+
+import java.util.List;
 
 @EnableAuthorizationServer
 @Configuration
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
+    private final InfoAdicionalToken infoAdicionalToken;
 
-    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
+    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken) {
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
+        this.infoAdicionalToken = infoAdicionalToken;
     }
 
     @Override
@@ -42,9 +47,13 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
 
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+        tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+
         endpoints.authenticationManager(this.authenticationManager)
                 .tokenStore(this.jwtTokenStore())
-                .accessTokenConverter(this.jwtAccessTokenConverter());
+                .accessTokenConverter(this.jwtAccessTokenConverter())
+                .tokenEnhancer(tokenEnhancerChain);
     }
 
     @Bean

@@ -478,3 +478,143 @@ RESPONSE
 
 La respuesta obtenida luego de enviarle tanto las credenciales de la aplicación cliente como las credenciales del
 usuario a autenticarse se muestran en el código anterior.
+---
+
+## Añadiendo más información al token JWT
+
+Primero, crearemos una interfaz que solo tendrá un método para poder buscar un usuario por su username:
+
+````
+public interface IUsuarioService {
+    Optional<Usuario> findByUsername(String username);
+}
+````
+
+Como nuestra clase de servicio **UsuarioService** ya tiene inyectada el **IUsuarioFeignClient**, quien es el
+que nos permitirá hacer la petición al ms-usuarios para encontrar a un usuario, hacemos que esta clase
+implemente la interfaz que creamos anteriormente e implementamos su método para poder buscar a un usuario
+por su username:
+
+````
+@Service
+public class UsuarioService implements IUsuarioService, UserDetailsService {  
+  /* Más código */
+  
+  @Override
+  public Optional<Usuario> findByUsername(String username) {
+      return this.usuarioFeignClient.findByUsername(username);
+  }
+}
+````
+
+Ahora, debemos crear una clase que implemente la interfaz **TokenEnhancer** (Token potenciador) que nos permitirá
+agregar información adicional al token (claims). Esta clase hará inyección de dependencia de la clase de servicio
+**UsuarioService,** pero a través de la interfaz que creamos **IUsuarioService,** ya que este tiene el método
+que nos retorna el Usuario a partir de su username:
+
+````
+@Component
+public class InfoAdicionalToken implements TokenEnhancer {
+    private final IUsuarioService usuarioService;
+
+    public InfoAdicionalToken(IUsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
+
+    @Override
+    public OAuth2AccessToken enhance(OAuth2AccessToken accessToken, OAuth2Authentication authentication) {
+        return this.usuarioService.findByUsername(authentication.getName())
+                .map(usuario -> {
+
+                    Map<String, Object> info = new HashMap<>();
+                    info.put("nombre", usuario.getNombre());
+                    info.put("apellido", usuario.getApellido());
+                    info.put("correo", usuario.getEmail());
+
+                    ((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(info);
+
+                    return accessToken;
+                }).orElseGet(() -> accessToken);
+    }
+}
+````
+
+Del código anterior, lo único extraño será el código que se muestra abajo, pero no hay nada de que sorprenderse,
+únicamente estamos haciendo un casteo del tipo de la interfaz **OAuth2AccessToken** a una implementación
+concreta **DefaultOAuth2AccessToken**, ya que es esta implementación concreta la que tiene el método
+**setAdditionalInformation(...)**, que es para agregar la información adicional.
+
+````
+((DefaultOAuth2AccessToken) accessToken).setAdditionalInformation(info);
+````
+
+Finalmente, necesitamos agregar la información adicional del token al token que se genera por defecto. Esta
+configuración lo hacemos en la clase **AuthorizationServerConfig**, método de los **endpoints**. Inyectamos
+a través del constructor la clase **InfoAdicionalToken,** ya que este contiene la información adicional. En el
+método realizamos la siguiente modificación:
+
+````
+@Override
+public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+    TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+    tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+
+    endpoints.authenticationManager(this.authenticationManager)
+            .tokenStore(this.jwtTokenStore())
+            .accessTokenConverter(this.jwtAccessTokenConverter())
+            .tokenEnhancer(tokenEnhancerChain);
+}
+````
+
+Como se observa en el código anterior, creamos un objeto del tipo **TokenEnhancerChain** para poder
+unir en una lista la **información adicional** con **la información generada por defecto
+(this.jwtAccessTokenConverter())**. Finalmente, al **endpoints** le agregamos el **tokenEnhancer(...)**.
+Es importante que el orden de la lista sea primero **la información adicional** y segundo
+**la información por defecto**.
+
+### Probando la autenticación desde Postman obteniendo la nueva información
+
+Hacemos uso de la misma petición que hicimos anteriormente, con los mismos datos (ver apartado superior):
+
+````
+[POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
+````
+
+Vemos que nos retorna la información adicional en el objeto.
+
+````
+RESPONSE BODY
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiZXhwIjoxNjg0MjkwNjAyLCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6ImY0MDA3OWM2LTA2OTctNDM1Yy1hMjYxLTRlNzlhOWYzMjFiYSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.TtIaiXHPxqs1O0ch_M1-_f2BR_kekbKsc3_HEN8cpP8",
+    "token_type": "bearer",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiYXRpIjoiZjQwMDc5YzYtMDY5Ny00MzVjLWEyNjEtNGU3OWE5ZjMyMWJhIiwiZXhwIjoxNjg0MjkwNjAyLCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6IjAwNTNiYzYzLThhOTUtNDg3ZS05OTc1LTBjOTAzMWFiNTRmYiIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.URoWH5BzWolWDMJhxWxiVvJDSJ9srHkm8iuFol3Tax0",
+    "expires_in": 3599,
+    "scope": "read write",
+    "apellido": "Díaz",
+    "correo": "martin@magadiflo.com",
+    "nombre": "Martín",
+    "jti": "f40079c6-0697-435c-a261-4e79a9f321ba"
+}
+````
+
+Decodificando el **access_token** (https://jwt.io/), podemos observar que también se ha incluido dentro
+del token la información adicional.
+
+````
+{
+  "user_name": "martin",
+  "scope": [
+    "read",
+    "write"
+  ],
+  "apellido": "Díaz",
+  "correo": "martin@magadiflo.com",
+  "exp": 1684290602,
+  "nombre": "Martín",
+  "authorities": [
+    "ROLE_USER"
+  ],
+  "jti": "f40079c6-0697-435c-a261-4e79a9f321ba",
+  "client_id": "frontendApp"
+}
+````
