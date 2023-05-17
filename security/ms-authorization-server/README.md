@@ -360,3 +360,121 @@ public void configure(AuthorizationServerSecurityConfigurer security) throws Exc
 
 Para acceder a estos dos endpoints, es usando la autenticación del tipo Http Basic:
 ```Authorization Basic: clientId: clientSecret```
+---
+
+## Probando la autenticación con Postman y obteniendo el token JWT
+
+Para el ejemplo, necesitamos generar passwords encriptados con BCrypt. Para eso, en la clase principal creamos un
+@Bean y generamos una implementación concreta de la interfaz funcional CommandLineRunner. Otra opción sería,
+en vez de crear un bean, que la clase principal implemente la interfaz e implementamos el método run():
+
+````
+@Bean
+public CommandLineRunner run() throws Exception {
+    return args -> {
+        String password = "12345";
+        for (int i = 0; i < 4; i++) {
+            String passwordBcrypt = this.passwordEncoder.encode(password);
+            LOG.info(passwordBcrypt);
+        }
+    };
+}
+````
+
+**Donde**
+
+- El **passwordEncoder** lo inyectamos vía constructor.
+
+### Generando contraseñas
+
+Luego ejecutamos primero **ms-eureka-server**, luego **ms-authorization-server** y revisamos en la consola
+las contraseñas generadas.
+
+### Cambiando las contraseñas en texto plano por las encriptadas
+
+En el archivo **import.sql** del **ms-usuarios** reemplazamos las contraseñas que están en texto plano por cualquiera
+de las contraseñas generadas.
+
+### Agregando ruta del ms-authorization-server en el ms-spring-cloud-gateway
+
+Para poder acceder al ms-authorization-server mediante el gateway necesitamos configurarle
+sus rutas en el **application.yml**, a continuación se muestra la configuración que se agregó:
+
+````
+- id: ms-authorization-server
+  uri: lb://ms-authorization-server
+  predicates:
+    - Path=/api-base/authorization-server-base/**
+  filters:
+    - StripPrefix=2
+````
+
+### Probando la autenticación desde Postman
+
+````
+[POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
+````
+
+**DONDE**
+
+- **/api-base/authorization-server-base/**, corresponde a la ruta configurada en el
+  application.yml del ms-spring-cloud-gateway.
+- **/oauth/token**, es la ruta propia del servidor de autorización.
+
+````
+REQUEST
+
+Authorization
+-------------
+Type: Basic Auth
+Username: frontendApp
+Password: frontendApp-12345
+
+Por detrás, Postman generará el siguiente header para los datos de la Authorization anterior:
+
+Headers
+-------
+Key= Authorization
+Value= Basic ZnJvbnRlbmRBcHA6ZnJvbnRlbmRBcHAtMTIzNDU=
+
+Donde el código mostrado se obtiene del username y password separado por dos puntos
+codificado en base64:
+  frontendApp:frontendApp-12345 --> convertido a base64 --> ZnJvbnRlbmRBcHA6ZnJvbnRlbmRBcHAtMTIzNDU=
+  
+Body
+----
+[*] x-www-form-urlencoded
+Key         Value
+----------  --------
+usename     admin
+password    12345
+grant_type  password
+````
+
+**DONDE**
+
+- En el **headers** enviamos usando **Http Basic Auth** las credenciales de la aplicación
+  cliente configurada dentro del servidor de autorización.
+- En el **body**, usando **x-www-form-urlencoded** enviamos las credenciales del usuario
+  que se quiere autenticar.
+- Notar que el tipo de **grant_type** es **password**, tal como lo configuramos en el servidor
+  de autorización, esto nos indica que nos devolverá un token de acceso cuando nosotros le proporcionemos
+  nuestras credenciales.
+
+````
+RESPONSE
+
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQyODUzMDgsInVzZXJfbmFtZSI6ImFkbWluIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BRE1JTiIsIlJPTEVfVVNFUiJdLCJqdGkiOiI4NzI5MzM4Yi03NTI4LTQ3M2YtOGU2NS05MjA1MzUyOWFhMDEiLCJjbGllbnRfaWQiOiJmcm9udGVuZEFwcCIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdfQ.qZvNgMvz9AYj7cbI5YQP_oyppNXeOklJ69Hdb754-Ls",
+    "token_type": "bearer",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhdGkiOiI4NzI5MzM4Yi03NTI4LTQ3M2YtOGU2NS05MjA1MzUyOWFhMDEiLCJleHAiOjE2ODQyODUzMDgsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1VTRVIiXSwianRpIjoiNTAwZTMzODgtN2E5NC00MmI1LTg3MmMtMDFjMjI4N2JiZjU0IiwiY2xpZW50X2lkIjoiZnJvbnRlbmRBcHAifQ.8JzKgFAv6Mt1TJ9XpTmdx6VjFxVxmyZQiXMktlB9UQw",
+    "expires_in": 3599,
+    "scope": "read write",
+    "jti": "8729338b-7528-473f-8e65-92053529aa01"
+}
+````
+
+**NOTA**
+
+La respuesta obtenida luego de enviarle tanto las credenciales de la aplicación cliente como las credenciales del
+usuario a autenticarse se muestran en el código anterior.

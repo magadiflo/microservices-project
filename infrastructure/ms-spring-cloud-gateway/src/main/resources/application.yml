@@ -65,3 +65,9 @@ spring:
             - Path=/api-base/usuarios-base/**
           filters:
             - StripPrefix=2
+        - id: ms-authorization-server
+          uri: lb://ms-authorization-server
+          predicates:
+            - Path=/api-base/authorization-server-base/**
+          filters:
+            - StripPrefix=2
