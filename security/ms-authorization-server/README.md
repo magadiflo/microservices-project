@@ -1001,9 +1001,13 @@ public void publishAuthenticationSuccess(Authentication authentication) {
 }
 ````
 
-El método el fracaso se puede ejecutar por dos razones, porque el username enviado no exista, o porque
-el username existe, pero la contraseña es incorrecta. En este segundo escenario es que, aplicaremos
-la lógica de los 3 intentos fallidos para deshabilitar al usuario.
+El método el fracaso se puede ejecutar por **dos razones**, porque **el username enviado no exista**, o porque
+el **username existe**, pero la **contraseña es incorrecta**. **En este segundo escenario** es que, **aplicaremos
+la lógica de los 3 intentos fallidos para deshabilitar al usuario**.
+
+En el primer escenario **(usuario no existe)**, **usaremos un bloque try-catch** para capturar la excepción del tipo
+FeignException, ya que es una excepción que ocurre cuando se intenta **buscar un usuario al ms-usuarios** a través
+de **FeignClient** y este no existe.
 
 ````
 @Override
@@ -1030,3 +1034,48 @@ public void publishAuthenticationFailure(AuthenticationException exception, Auth
     }
 }
 ````
+
+## Manejando error 404 en componente de servicio UserDetailsService
+
+En la clase de implementación de nuestro UserDetailsService, es decir, la clase de servicio **UsuarioService**,
+debemos **usar un bloque try-catch** para manejar el **error 404** generado por buscar un usuario no existente,
+a través del cliente feign, ya que este es el que usamos para recuperar un usuario del ms-usuarios. Por lo tanto,
+**usamos el bloque try-catch** para atrapar la excepción **FeignException** y lanzar una excepción del tipo
+**UsernameNotFoundException**, excepción que se espera que se lance cuando el usuario no sea encontrado. Finalmente,
+el método quedaría de esta manera:
+
+````
+@Override
+public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    try {
+        return this.usuarioFeignClient.findByUsername(username)
+                .map(usuario -> {
+
+                    List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
+                            .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
+                            .peek(simpleGrantedAuthority -> LOG.info("Rol: {}", simpleGrantedAuthority.getAuthority()))
+                            .toList();
+
+                    UserDetails userDetails = User.builder()
+                            .username(usuario.getUsername())
+                            .password(usuario.getPassword())
+                            .authorities(authorities)
+                            .disabled(!usuario.getEnabled())
+                            .build();
+
+                    LOG.info("Detalles del usuario autenticado: {}", userDetails);
+
+                    return userDetails;
+                }).get();
+    } catch (FeignException fe) {
+        LOG.error("[try-catch]Error en el login, no existe el usuario {} en el sistema", username);
+        throw new UsernameNotFoundException(String.format("[try-catch]Error en el login, no existe el usuario %s en el sistema", username));
+    }
+}
+````
+
+**NOTA**: anteriormente, sí teníamos el método que lanzaba la excepción del tipo **UsernameNotFoundException**, el cual
+concatenaba al **map(...)** del **findByUsername(..),** ya que este es un Optional, pero no estaba lanzando la
+excepción cuando un username no existía, y esto es, porque la búsqueda la estamos haciendo **usando un clienteFeign**,
+y este **FeignClient** lanza una excepción del tipo **FeignException** cuando el usuario no existe, así que es por eso
+que manejamos el try-catch.

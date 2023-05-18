@@ -2,6 +2,7 @@ package com.magadiflo.msp.security.authorization.server.app.services;
 
 import com.magadiflo.msp.security.authorization.server.app.clients.IUsuarioFeignClient;
 import com.magadiflo.msp.shared.library.usuarios.commons.app.models.entity.Usuario;
+import feign.FeignException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -25,26 +26,30 @@ public class UsuarioService implements IUsuarioService, UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return this.usuarioFeignClient.findByUsername(username)
-                .map(usuario -> {
+        try {
+            return this.usuarioFeignClient.findByUsername(username)
+                    .map(usuario -> {
 
-                    List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
-                            .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
-                            .peek(simpleGrantedAuthority -> LOG.info("Rol: {}", simpleGrantedAuthority.getAuthority()))
-                            .toList();
+                        List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
+                                .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
+                                .peek(simpleGrantedAuthority -> LOG.info("Rol: {}", simpleGrantedAuthority.getAuthority()))
+                                .toList();
 
-                    UserDetails userDetails = User.builder()
-                            .username(usuario.getUsername())
-                            .password(usuario.getPassword())
-                            .authorities(authorities)
-                            .disabled(!usuario.getEnabled())
-                            .build();
+                        UserDetails userDetails = User.builder()
+                                .username(usuario.getUsername())
+                                .password(usuario.getPassword())
+                                .authorities(authorities)
+                                .disabled(!usuario.getEnabled())
+                                .build();
 
-                    LOG.info("Detalles del usuario autenticado: {}", userDetails);
+                        LOG.info("Detalles del usuario autenticado: {}", userDetails);
 
-                    return userDetails;
-                })
-                .orElseThrow(() -> new UsernameNotFoundException(String.format("Error en el login, no existe el usuario %s en el sistema", username)));
+                        return userDetails;
+                    }).get();
+        } catch (FeignException fe) {
+            LOG.error("[try-catch]Error en el login, no existe el usuario {} en el sistema", username);
+            throw new UsernameNotFoundException(String.format("[try-catch]Error en el login, no existe el usuario %s en el sistema", username));
+        }
     }
 
     @Override
