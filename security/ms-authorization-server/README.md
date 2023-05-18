@@ -977,3 +977,56 @@ public class AuthenticationSuccessErrorHandler implements AuthenticationEventPub
     /* más código */
 }
 ````
+
+## Implementando evento 3 intentos en el login - parte 02
+
+Usando la implementación del IUsuarioService buscamos al usuario y lo actualizamos en cada método
+de éxito o fracaso, según sea el caso.
+
+En el método de éxito, buscamos al usuario por su username, y verificamos si ha tenido algún
+intento fallido, en caso sea cierto, lo reseteamos a cero.
+
+````
+@Override
+public void publishAuthenticationSuccess(Authentication authentication) {
+    if (authentication.getDetails() instanceof WebAuthenticationDetails) return;
+
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    LOG.info("Login exitoso!: {}", userDetails.getUsername());
+    Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
+    if (usuario.getIntentos() != null && usuario.getIntentos() > 0) {
+        usuario.setIntentos(0);
+        this.usuarioService.update(usuario, usuario.getId());
+    }
+}
+````
+
+El método el fracaso se puede ejecutar por dos razones, porque el username enviado no exista, o porque
+el username existe, pero la contraseña es incorrecta. En este segundo escenario es que, aplicaremos
+la lógica de los 3 intentos fallidos para deshabilitar al usuario.
+
+````
+@Override
+public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {
+    LOG.error("Error en el login: {}", exception.getMessage());
+    try {
+        Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
+
+        if (usuario.getIntentos() == null) {
+            usuario.setIntentos(0);
+        }
+
+        usuario.setIntentos(usuario.getIntentos() + 1);
+        LOG.info("N° de intentos fallidos: {}", usuario.getIntentos());
+
+        if (usuario.getIntentos() >= 3) {
+            usuario.setEnabled(false);
+            LOG.info("El usuario {} deshabilitado 3 intentos fallidos", usuario.getUsername());
+        }
+        this.usuarioService.update(usuario, usuario.getId());
+
+    } catch (FeignException e) {
+        LOG.error("El usuario {} no existe en el sistema", authentication.getName());
+    }
+}
+````
