@@ -51,4 +51,9 @@ public class UsuarioService implements IUsuarioService, UserDetailsService {
     public Optional<Usuario> findByUsername(String username) {
         return this.usuarioFeignClient.findByUsername(username);
     }
+
+    @Override
+    public Usuario update(Usuario usuario, Long id) {
+        return this.usuarioFeignClient.update(usuario, id);
+    }
 }

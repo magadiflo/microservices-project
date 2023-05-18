@@ -896,3 +896,84 @@ principal de Spring Security, justamente en el método **configure(Authenticatio
 estamos usando @Bean y @Service en reemplazo de ese método de configuración. **¿Cómo haremos?**, bueno resulta que
 al generar una implementación del **AuthenticationEventPublisher** y anotarlo con **@Component**, este se va a registrar
 en el contenedor de Spring, de esta forma, en automático será manejado por el **AuthenticationManager**.
+---
+
+## Implementando evento 3 intentos en el login - parte 01
+
+Primero, debemos agregar un atributo a nuestra clase **Usuario** para llevar el control del número de intentos
+realizados. Esta modificación se realizará en la librería **ms-usuarios-commons**, pero lo anotaremos por aquí,
+ya que solo es agregar un atributo:
+
+````
+@Entity
+@Table(name = "usuarios")
+public class Usuario implements Serializable {
+  /* más código */  
+  private Integer intentos;
+  public Integer getIntentos() {
+     return intentos;
+  }
+  public void setIntentos(Integer intentos) {
+     this.intentos = intentos;
+  }
+  /* más código */
+}
+````
+
+Ahora, como desde este microservicio (ms-authorization-server) nos comunicaremos al **ms-usuarios**, necesitamos
+un método en nuestro cliente feign que nos permita hacer la llamada http para poder actualizar los datos del usuario,
+que incluye la nueva propiedad **intentos**:
+
+````
+@FeignClient(name = "ms-usuarios", path = "/usuarios")
+public interface IUsuarioFeignClient {
+    /* más código */
+    
+    @PutMapping(path = "/{id}")
+    Usuario update(@RequestBody Usuario usuario, @PathVariable Long id); <--- para actualizar el usuario, eso incluye el nuevo atributo "intentos"
+}
+````
+
+La interfaz de FeignClient anterior está siendo inyectada en el servicio **UsuarioService**, por lo tanto, allí
+necesitamos un método que nos permita llamar al método para actualizar el usuario. Esta clase de servicio está
+implementando una interfaz que nosotros mismos creamos **(IUsuarioService)**. Usaremos esa misma interfaz para definir
+nuestro método de actualización:
+
+````
+public interface IUsuarioService {
+    /* más código */
+    Usuario update(Usuario usuario, Long id);
+}
+````
+
+Como agregamos un nuevo método en la interfaz anterior, y como la clase UsuarioService la tiene implementada, nos va
+a pedir que agreguemos el método de la interfaz para implementarla. La agregamos y usando el clienteFeign inyectado
+actualizamos el usuario:
+
+````
+@Service
+public class UsuarioService implements IUsuarioService, UserDetailsService {
+  /* más código */
+  @Override
+  public Usuario update(Usuario usuario, Long id) {
+      return this.usuarioFeignClient.update(usuario, id);
+  }
+}
+````
+
+Finalmente, en nuestra clase de componente **AuthenticationSuccessErrorHandler** hacemos inyección de dependencia
+vía constructor de la interfaz **IUsuarioService** quien tomará como implementación a nuestra clase de
+servicio **UsuarioService**.
+
+````
+@Component
+public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
+    private final IUsuarioService usuarioService;
+    
+    public AuthenticationSuccessErrorHandler(IUsuarioService usuarioService) {
+        this.usuarioService = usuarioService;
+    }
+    
+    /* más código */
+}
+````

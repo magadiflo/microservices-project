@@ -6,4 +6,6 @@ import java.util.Optional;
 
 public interface IUsuarioService {
     Optional<Usuario> findByUsername(String username);
+
+    Usuario update(Usuario usuario, Long id);
 }

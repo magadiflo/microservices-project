@@ -30,6 +30,7 @@ public class Usuario implements Serializable {
     )
     @ManyToMany
     private List<Rol> roles = new ArrayList<>();
+    private Integer intentos;
 
     public Long getId() {
         return id;
@@ -93,6 +94,14 @@ public class Usuario implements Serializable {
 
     public void setRoles(List<Rol> roles) {
         this.roles = roles;
+    }
+
+    public Integer getIntentos() {
+        return intentos;
+    }
+
+    public void setIntentos(Integer intentos) {
+        this.intentos = intentos;
     }
 
     @Override
