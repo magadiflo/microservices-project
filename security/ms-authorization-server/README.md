@@ -819,3 +819,80 @@ RESPONSE
     "jti": "00da84c7-0eec-47ff-a13d-717f4bbffdc1"
 }
 ````
+
+---
+
+## Manejando eventos de éxito y fracaso en la autenticación
+
+En este caso, crearemos una clase de componente e implementaremos dos métodos que nos indicarán error o
+éxito cuando un usuario intente hacer login.
+
+Primero crearemos nuestra clase de componente implementando la interfaz AuthenticationEventPublisher:
+
+````
+@Component
+public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
+
+    private final static Logger LOG = LoggerFactory.getLogger(AuthenticationSuccessErrorHandler.class);
+
+    @Override
+    public void publishAuthenticationSuccess(Authentication authentication) {
+        if(authentication.getDetails() instanceof WebAuthenticationDetails) return;
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        LOG.info("Login exitoso!: {}", userDetails.getUsername());
+    }
+
+    @Override
+    public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {
+        LOG.error("Error en el login: {}", exception.getMessage());
+    }
+}
+````
+
+Como se observa en el código anterior, el primer método ocurrirá cuando la autenticación sea exitosa, mientras
+que el segundo método cuando falle.
+
+> Notar que en el método de autenticación exitosa estamos realizando una validación:
+``if(authentication.getDetails() instanceof WebAuthenticationDetails) return;``. En versiones actuales de OAuth2, cuando
+> se ejecuta este método **publishAuthenticationSuccess(..)**, pasan las instancias, tanto del cliente App como la del
+> usuario que se logueó. En este caso, nosotros queremos tratar únicamente con los datos del usuario y no de
+> la aplicación cliente, que sabemos que siempre tendrá como credenciales: username: frontendApp, password:
+> frontendApp-12345.
+
+Ahora, en el curso de Andrés Guzmán, la configuración la realiza dentro de la clase principal de
+configuración de Spring Security, en el método **configure(AuthenticationManagerBuilder auth)**.
+La configuración que realiza en el curso queda así:
+
+````
+@Configuration
+public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
+    /* más código */	
+    private final AuthenticationEventPublisher authenticationEventPublisher;
+
+	public SpringSecurityConfig(/* más código */, AuthenticationEventPublisher authenticationEventPublisher) {
+		this.authenticationEventPublisher = authenticationEventPublisher;
+	}
+	
+    @Override
+    protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.userDetailsService(this.usuarioService).passwordEncoder(passwordEncoder())
+            .and()
+            .authenticationEventPublisher(this.authenticationEventPublisher); <------- Aquí se está usando el componente inyectado
+    }
+    
+}
+````
+
+En nuestro caso, recordemos que tomamos como referencia el libro **Spring Security In Action 2020** para decidir
+y no mezclar las configuraciones ya sea o usando la configuración anterior o usando las anotaciones @Bean para trabajar
+con el **UserDetailsService y PasswordEncoder**. Nuestra elección fue trabajar con las anotaciones @Bean para definir
+en una clase de configuración los Bean y Service propios del UserDetailsService y PasswordEncoder, de esa forma ya no
+usaríamos el método de configuración anterior (configure(AuthenticationManagerBuilder auth)).
+
+Hasta este punto está funcionando bien, pero resulta que ahora al crear una implementación del
+**AuthenticationEventPublisher**, en el curso de Andrés Guzmán se lo usa dentro de nuestra clase de configuración
+principal de Spring Security, justamente en el método **configure(AuthenticationManagerBuilder auth)**, pero nosotros
+estamos usando @Bean y @Service en reemplazo de ese método de configuración. **¿Cómo haremos?**, bueno resulta que
+al generar una implementación del **AuthenticationEventPublisher** y anotarlo con **@Component**, este se va a registrar
+en el contenedor de Spring, de esta forma, en automático será manejado por el **AuthenticationManager**.
