@@ -618,3 +618,82 @@ del token la información adicional.
   "client_id": "frontendApp"
 }
 ````
+
+---
+
+## Creando configuración de OAuth en el servidor de configuración
+
+En el repositorio del servidor de configuraciones agregamos un **application.properties**
+con configuraciones compartidas por varios microservicios, en este caso las credenciales que
+usará una aplicación cliente, así como la clave para firmar el token.
+
+Entonces, necesitamos que nuestro servidor ms-authorization-server se comunique con el servidor de configuraciones
+para obtener dichas configuraciones. Agregamos la dependencia de config client:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+````
+
+Ahora, en el **application.properties** de nuestro **ms-authorization-server** agregamos
+las configuraciones que apunten al servidor de configuraciones:
+
+````
+# Configuracion al servidor de configuraciones
+spring.config.import=optional:configserver:http://localhost:8888
+
+# Habilita los endpoints de Spring Actuator
+management.endpoints.web.exposure.include=*
+````
+
+La segunda configuración de **Spring Actuator**, es por si agregamos la dependencia
+de Spring Actuator a este microservicio con la finalidad de poder actualizar los valores
+de las configuraciones sin necesidad de reiniciar la aplicación.
+
+Finalmente en nuestra clase **AuthorizationServerConfig** estamos **usando la llave para firmar nuestro token**,
+y además las **credenciales que deberá enviarnos la aplicación cliente**, dichas credenciales ya la colocamos en el
+repositorio del servidor de configuraciones, así que para poder acceder a ellos, necesitamos usar o el **Environment** o
+la
+inyección a través del **@Value**, en este caso usamos el **Environment**:
+
+````
+/* más código */
+private final Environment environment;
+
+public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken, Environment environment) {
+    this.passwordEncoder = passwordEncoder;
+    this.authenticationManager = authenticationManager;
+    this.infoAdicionalToken = infoAdicionalToken;
+    this.environment = environment;
+}
+
+/* más código */
+````
+
+Ahora, cambiamos los valores que están hardcodeados por las que ya están en el servidor de configuración:
+
+````
+@Override
+public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+    clients.inMemory()
+            .withClient(this.environment.getProperty("config.security.oauth.client.id")) <------ Username de la aplicación cliente
+            .secret(this.passwordEncoder.encode(this.environment.getProperty("config.security.oauth.client.secret"))) <------ Password de la aplicación cliente
+            
+    /* más código */
+}
+````
+
+````
+@Bean
+public JwtAccessTokenConverter jwtAccessTokenConverter() {
+    JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+    jwtAccessTokenConverter.setSigningKey(this.environment.getProperty("config.security.oauth.jwt.key")); <------ Clave secreta para firmar el token
+    return jwtAccessTokenConverter;
+}
+````
+
+Otra modificación que se hizo fue agregar la anotación **@RefreshScope**, como recordaremos, si usamos
+actuator eso nos permitirá acceder a una url y a través de ella poder reiniciar las configuraciones que
+están siendo aplicadas en esta clase sin necesidad de reiniciar la aplicación.

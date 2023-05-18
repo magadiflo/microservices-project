@@ -79,3 +79,24 @@ En el application.properties agregamos la configuración con la url de nuestro r
 ````
 spring.cloud.config.server.git.uri=https://github.com/magadiflo/config-server-repo.git
 ````
+
+---
+
+## Creando configuración de OAuth en el Servidor de Configuración
+
+Como en el **ms-zuul-server** y **ms-authorization-server** usamos casi las mismas configuraciones,
+necesitamos crear un **application.properties** en el **repositorio del servidor de configuraciones**
+para que esté disponible de manera compartida para ambos microservicios o aquel
+microservicio que requiera dichas configuraciones.
+
+Creamos el archivo **application.properties** con las siguientes configuraciones personalizadas,
+las guardamos y pusheamos al repositorio remoto:
+
+````
+# Para autenticarnos para generar el token (credenciales de la App Client)
+config.security.oauth.client.id=frontendApp
+config.security.oauth.client.secret=frontendApp-12345
+
+# llave para firmar el token
+config.security.oauth.jwt.key=mi-clave-secreta-12345
+````

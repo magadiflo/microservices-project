@@ -1,7 +1,9 @@
 package com.magadiflo.msp.security.authorization.server.app.security;
 
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
@@ -15,17 +17,20 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
 import java.util.List;
 
+@RefreshScope
 @EnableAuthorizationServer
 @Configuration
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final InfoAdicionalToken infoAdicionalToken;
+    private final Environment environment;
 
-    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken) {
+    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken, Environment environment) {
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.infoAdicionalToken = infoAdicionalToken;
+        this.environment = environment;
     }
 
     @Override
@@ -37,8 +42,8 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Override
     public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
         clients.inMemory()
-                .withClient("frontendApp")
-                .secret(this.passwordEncoder.encode("frontendApp-12345"))
+                .withClient(this.environment.getProperty("config.security.oauth.client.id"))
+                .secret(this.passwordEncoder.encode(this.environment.getProperty("config.security.oauth.client.secret")))
                 .scopes("read", "write")
                 .authorizedGrantTypes("password", "refresh_token")
                 .accessTokenValiditySeconds(3600)
@@ -64,7 +69,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter() {
         JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-        jwtAccessTokenConverter.setSigningKey("mi-clave-secreta-12345");
+        jwtAccessTokenConverter.setSigningKey(this.environment.getProperty("config.security.oauth.jwt.key"));
         return jwtAccessTokenConverter;
     }
 }

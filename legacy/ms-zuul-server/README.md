@@ -188,3 +188,61 @@ public void configure(HttpSecurity http) throws Exception {
             .anyRequest().authenticated();
 }
 ````
+
+---
+
+## Creando configuración de OAuth en el servidor de configuración
+
+En el repositorio del servidor de configuraciones agregamos un **application.properties**
+con configuraciones compartidas por varios microservicios, en este caso las credenciales que
+usará una aplicación cliente, así como la clave para firmar el token.
+
+Entonces, necesitamos que nuestro servidor ms-zuul-server se comunique con el servidor de configuraciones
+para obtener dichas configuraciones. Agregamos la dependencia de config client:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+````
+
+Ahora, en el **application.properties** de nuestro **ms-zuul-server** agregamos
+las configuracinoes que apunten al servidor de configuraciones:
+
+````
+# Configuracion al servidor de configuraciones
+spring.config.import=optional:configserver:http://localhost:8888
+
+# Habilita los endpoints de Spring Actuator
+management.endpoints.web.exposure.include=*
+````
+
+La segunda configuración de **Spring Actuator**, es por si agregamos la dependencia
+de Spring Actuator a este servidor con la finalidad de poder actualizar los valores
+de las configuraciones sin necesidad de reiniciar la aplicación.
+
+Finalmente en nuestra clase **ResourceServerConfig** estamos **usando la llave para firmar nuestro token**,
+dicha llave ya la colocamos en el repositorio del servidor de configuraciones, así que para poder acceder
+a él, necesitamos usar o el **Environment** o la inyección a través del **@Value**, en este caso usamos
+el **@Value**:
+
+````
+@Value("${config.security.oauth.jwt.key}")
+private String jwtKey;
+````
+
+Ahora, cambiamos la clave que está hardcodeado por nuestra variable
+
+````
+@Bean
+public JwtAccessTokenConverter jwtAccessTokenConverter() {
+    JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+    jwtAccessTokenConverter.setSigningKey(this.jwtKey); <------- Aquí va el jwtKey para firmar el token
+    return jwtAccessTokenConverter;
+}
+````
+
+Otra modificación que se hizo fue agregar la anotación **@RefreshScope**, como recordaremos, si usamos
+actuator eso nos permitirá acceder a una url y a través de ella poder reiniciar las configuraciones que
+están siendo aplicadas en esta clase sin necesidad de reiniciar la aplicación.
