@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.config.annotation.web.configuration.R
 import org.springframework.security.oauth2.config.annotation.web.configurers.ResourceServerSecurityConfigurer;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @RefreshScope
 @EnableResourceServer
@@ -18,6 +19,12 @@ import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
     @Value("${config.security.oauth.jwt.key}")
     private String jwtKey;
+    private final CorsConfigurationSource corsConfigurationSource;
+
+    public ResourceServerConfig(CorsConfigurationSource corsConfigurationSource) {
+        this.corsConfigurationSource = corsConfigurationSource;
+    }
+
     @Override
     public void configure(ResourceServerSecurityConfigurer resources) throws Exception {
         resources.tokenStore(this.jwtTokenStore());
@@ -39,7 +46,9 @@ public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
                 .antMatchers("/api-base/productos-base/**",
                         "/api-base/items-base/**", "/api-base/usuarios-base/**")
                 .hasRole("ADMIN")
-                .anyRequest().authenticated();
+                .anyRequest().authenticated()
+                .and()
+                .cors().configurationSource(this.corsConfigurationSource);
     }
 
     @Bean

@@ -246,3 +246,106 @@ public JwtAccessTokenConverter jwtAccessTokenConverter() {
 Otra modificación que se hizo fue agregar la anotación **@RefreshScope**, como recordaremos, si usamos
 actuator eso nos permitirá acceder a una url y a través de ella poder reiniciar las configuraciones que
 están siendo aplicadas en esta clase sin necesidad de reiniciar la aplicación.
+---
+
+## Configurando Cors en Spring Security OAuth2
+
+La configuración de CORS es opcional, solo si nuestra aplicación Cliente reside en otro dominio.
+
+En el curso, se realiza la creación de los @Bean (para este tema de configuración de cors) dentro de la misma clase de
+configuración de nuestro servidor de recurso.
+
+Por mi parte, crearé una clase de configuración aparte, para no tenerlos mezclados y definir sus responsabilidades.
+Así que crearé una clase llamada **CorsConfig** dentro de un paquete **/config**.
+
+El primer bean a crear será el siguiente:
+
+````
+@Configuration
+public class CorsConfig {
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration corsConfiguration = new CorsConfiguration();
+        corsConfiguration.setAllowedOrigins(List.of("*"));
+        corsConfiguration.setAllowedMethods(List.of("POST", "GET", "PUT", "DELETE", "OPTIONS"));
+        corsConfiguration.setAllowCredentials(true);
+        corsConfiguration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", corsConfiguration);
+    
+        return source;
+    }
+    
+    /* más código */
+}
+````
+
+**DONDE:**
+
+- El *, es una bandera que hace referencia a todos los orígenes, es decir cualquier dominio.
+- Dentro de los métodos permitidos está el **OPTIONS**, es muy importante habilitarlo, ya que por debajo lo utiliza
+  OAuth2 para sus endPonints ../oauth/token, etc..
+- **setAllowCredentials(true)**, permitimos que se admiten las credenciales de usuario. De forma predeterminada, esto no
+  está configurado (es decir, las credenciales de usuario no son compatibles).
+- Con "/**", le indicamos que las configuraciones se apliquen a todas las rutas.
+
+El segundo bean a crear será el siguiente:
+
+````
+@Bean
+public FilterRegistrationBean<CorsFilter> corsFilterFilterRegistrationBean() {
+    FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(new CorsFilter(this.corsConfigurationSource()));
+    bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+    return bean;
+}
+````
+
+**DONDE:**
+
+- **bean.setOrder(Ordered.HIGHEST_PRECEDENCE)**, le indicamos que será un filtro de ALTA PRIORIDAD.
+- **...new CorsFilter(this.corsConfigurationSource()));**, registramos la configuración de cors realizada en el bean
+  anterior.
+
+Con el bean anterior **registramos un filtro http de cors** para **todas** las **rutas en zuul** de forma global,
+que al final son las rutas de los demás microservicios, ya que es un gateway, pero siempre pasando por Zuul,
+de esa manera, **no solo lo dejamos configurado en Spring Security**, sino que **también quede a nivel global**
+a toda nuestra aplicación en general.
+
+### Configurando el cors para Spring Security
+
+En nuestra clase de configuración del servidor de recurso (ResourceServerConfig) aplicamos inyección de dependencia
+vía constructor, del bean que creamos en nuestra clase CorsConfig.
+
+````
+@RefreshScope
+@EnableResourceServer
+@Configuration
+public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
+    
+    /* más código */
+    private final CorsConfigurationSource corsConfigurationSource;
+
+    public ResourceServerConfig(CorsConfigurationSource corsConfigurationSource) {
+        this.corsConfigurationSource = corsConfigurationSource;
+    }
+    
+    /* más código */
+}
+````
+
+Finalmente, en nuestra **clase de configuración de Spring Security** agregamos la **configuración del cors**.
+
+````
+@Override
+public void configure(HttpSecurity http) throws Exception {
+
+    /* más código */
+    
+    .hasRole("ADMIN")
+    .anyRequest().authenticated()
+    .and()
+    .cors().configurationSource(this.corsConfigurationSource); <---------- Agregando configuración de CORS
+}
+````
