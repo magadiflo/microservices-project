@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.config.annotation.configurers.ClientDetailsServiceConfigurer;
 import org.springframework.security.oauth2.config.annotation.web.configuration.AuthorizationServerConfigurerAdapter;
@@ -25,12 +26,14 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     private final AuthenticationManager authenticationManager;
     private final InfoAdicionalToken infoAdicionalToken;
     private final Environment environment;
+    private final UserDetailsService userDetailsService;
 
-    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken, Environment environment) {
+    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken, Environment environment, UserDetailsService userDetailsService) {
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.infoAdicionalToken = infoAdicionalToken;
         this.environment = environment;
+        this.userDetailsService = userDetailsService;
     }
 
     @Override
@@ -58,7 +61,8 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         endpoints.authenticationManager(this.authenticationManager)
                 .tokenStore(this.jwtTokenStore())
                 .accessTokenConverter(this.jwtAccessTokenConverter())
-                .tokenEnhancer(tokenEnhancerChain);
+                .tokenEnhancer(tokenEnhancerChain)
+                .userDetailsService(this.userDetailsService);
     }
 
     @Bean

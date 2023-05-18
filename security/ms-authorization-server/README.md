@@ -697,3 +697,125 @@ public JwtAccessTokenConverter jwtAccessTokenConverter() {
 Otra modificación que se hizo fue agregar la anotación **@RefreshScope**, como recordaremos, si usamos
 actuator eso nos permitirá acceder a una url y a través de ella poder reiniciar las configuraciones que
 están siendo aplicadas en esta clase sin necesidad de reiniciar la aplicación.
+---
+
+## Solución al error cuando se quiere obtener un nuevo token a partir del refresh token
+
+Imaginemos que queremos obtener un nuevo token a partir del **refresh_token,** ya que el token que tenemos,
+digamos ha expirado. Al tratar de obtener el nuevo token, nos muestra el siguiente error:
+
+````
+java.lang.IllegalStateException: UserDetailsService is required
+````
+
+La solución claramente indica que se necesita la implementación del **UserDetailsService**, por lo tanto,
+aplicaremos la siguiente solución, tomando como referencia la solución brindada por un estudiante del curso
+(solución en la sección 9: Spring Cloud Security: implementando OAuth2 y JWT, clase: 102. Revisando el token de
+actualización). En la solución del estudiante, modifica la interfaz **IUsuarioService** para que esta interfaz
+extienda de UserDetailsService, etc...
+
+En mi caso, no modificaré ninguna interfaz, ya que lo que nos está pidiendo es tener un **UserDetailsService**,
+por lo tanto, en la clase de configuración **AuthorizationServerConfig** aplicamos inyección de dependencias
+vía constructor del **UserDetailsService**, quien al final tomará la implementación que hicimos en la clase
+**UsuarioService**. Finalmente, la variable inyectada lo agregaremos en el método
+`` configure(AuthorizationServerEndpointsConfigurer endpoints)``, esto último sí es similar a cómo lo hizo
+el estudiante:
+
+````
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+  /* más código */
+  private final UserDetailsService userDetailsService;
+
+  public AuthorizationServerConfig(/* más código */, UserDetailsService userDetailsService) {
+      /* más código */
+      this.userDetailsService = userDetailsService;
+  }
+  
+  /* más código */
+  
+  @Override
+  public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+      TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+      tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+
+      endpoints.authenticationManager(this.authenticationManager)
+              .tokenStore(this.jwtTokenStore())
+              .accessTokenConverter(this.jwtAccessTokenConverter())
+              .tokenEnhancer(tokenEnhancerChain)
+              .userDetailsService(this.userDetailsService); <--------------- Agregando el UserDetailsService requerida
+  }
+  
+  /* más código */
+  
+}
+````
+
+### Probando el refresh_token desde Postman
+
+````
+[POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
+````
+
+**DONDE**
+
+- **/api-base/authorization-server-base/**, corresponde a la ruta configurada en el
+  application.yml del ms-spring-cloud-gateway.
+- **/oauth/token**, es la ruta propia del servidor de autorización.
+
+````
+REQUEST
+
+Authorization
+-------------
+Type: Basic Auth
+Username: frontendApp
+Password: frontendApp-12345
+
+Por detrás, Postman generará el siguiente header para los datos de la Authorization anterior:
+
+Headers
+-------
+Key= Authorization
+Value= Basic ZnJvbnRlbmRBcHA6ZnJvbnRlbmRBcHAtMTIzNDU=
+
+Donde el código mostrado se obtiene del username y password separado por dos puntos
+codificado en base64:
+  frontendApp:frontendApp-12345 --> convertido a base64 --> ZnJvbnRlbmRBcHA6ZnJvbnRlbmRBcHAtMTIzNDU=
+  
+Body
+----
+[*] x-www-form-urlencoded
+Key             Value
+----------      --------
+grant_type      refresh_token
+refresh_token   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImF0aSI6ImE2N2ViMDc0LTY2NDYtNGRkMC1hYWM4LTAyZTljMWQzZGY4NyIsImV4cCI6MTY4NDM3NDAyMywibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6ImNlYWQwMWM4LTQzZmQtNGJjNC04Nzc1LTM5Zjg1YWM0YjI5MSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.4Sc6Eh8xfFrH8CXcT6uDCd1K_22pcN89eyBTaXZyRfs
+````
+
+**DONDE**
+
+- En el **headers** enviamos usando **Http Basic Auth** las credenciales de la aplicación
+  cliente configurada dentro del servidor de autorización.
+- En el **body**, usando **x-www-form-urlencoded** enviamos el tipo de concesión (refresh_token)
+  y el valor del refresh_token.
+- Notar que el tipo de **grant_type** es **refresh_token**, tal como lo configuramos en el servidor
+  de autorización, esto nos indica que si nosotros le proporcionamos el valor de un refresh_token, este nos
+  va a devolver un nuevo token.
+
+````
+RESPONSE
+
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImV4cCI6MTY4NDM3NDEwMCwibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6IjAwZGE4NGM3LTBlZWMtNDdmZi1hMTNkLTcxN2Y0YmJmZmRjMSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.5Tlga71jBhEny_mnYHtZn_YKHu5PH6wIY_KZFpash6Q",
+    "token_type": "bearer",
+    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImF0aSI6IjAwZGE4NGM3LTBlZWMtNDdmZi1hMTNkLTcxN2Y0YmJmZmRjMSIsImV4cCI6MTY4NDM3NDAyMywibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6ImNlYWQwMWM4LTQzZmQtNGJjNC04Nzc1LTM5Zjg1YWM0YjI5MSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.CADuCrHP--MyIPkroNei6jWOTuwrlNV4C0ILkaP7cP8",
+    "expires_in": 3599,
+    "scope": "read write",
+    "apellido": "Admin",
+    "correo": "admin@magadiflo.com",
+    "nombre": "Admin",
+    "jti": "00da84c7-0eec-47ff-a13d-717f4bbffdc1"
+}
+````
