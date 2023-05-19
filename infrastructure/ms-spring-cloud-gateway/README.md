@@ -245,3 +245,69 @@ spring:
 - **fallbackUri**, da un servicio alternativo cuando se abra el circuito. Tiene que ser uno distinto al
   cual falla, porque si llamamos directamente a algún servicio bajo la ruta que falla (**/api-base/productos-base/**)
   se llamará de manera recursiva en un ciclo infinito, por eso es que pusimos la uri del servicio de items.
+
+---
+
+## Configurando servicio spring cloud gateway con algunas dependencias
+
+Si trabajamos con este microservicio de Spring Cloud Gateway, necesitamos hacer configuraciones a
+fin de proteger las rutas a los distintos microservicios, tal como lo hicimos en el servidor de Zuul. Ahora, como este
+microservicio usa programación reactiva, la configuración será algo distinta a lo que hicimos en el ms-zuul-server (
+quien usa programación imperativa, bajo los servlets).
+
+Recordar que en nuestro proyecto de microservicios, solo tendremos uno de los dos servidores en funcionamiento,
+o el ms-zuul-server o el ms-spring-cloud-gateway (más moderno).
+
+Iniciamos agregando las siguientes dependencias al pom.xml:
+
+````
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-security</artifactId>
+</dependency>
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+
+<!--  Estas dependencias las encuentra en https://github.com/jwtk/jjwt#install ---->
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-api</artifactId>
+    <version>0.11.5</version>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-impl</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+<dependency>
+    <groupId>io.jsonwebtoken</groupId>
+    <artifactId>jjwt-jackson</artifactId>
+    <version>0.11.5</version>
+    <scope>runtime</scope>
+</dependency>
+<!-- --------------------------------------------------------------------------- -->
+
+<!-- Esta dependencia en automático se incluye cuando incluimos Spring Security -->
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-test</artifactId>
+    <scope>test</scope>
+</dependency>
+````
+
+**NOTA:** en el video se hace uso de otra dependencia **spring-cloud-starter-bootstrap**, también lo había
+agregado, pero viendo en el botón de dependencias de **IntelliJ**, muestra que está dependencia será
+omitida, ya que en la dependencia de **spring-cloud-starter-gateway** ya lo trae incluido. En realidad,
+quien será omitida es **spring-cloud-starter**, pero esta está dentro de **spring-cloud-starter-bootstrap**
+y es la única dependencia, así que por eso ya no la puse, ya que esa única dependencia ya la trae el
+**spring-cloud-starter-gateway**.
+
+En el application.properties agregamos la configuración para conectarnos al servidor de configuraciones:
+
+````
+# Configuracion al servidor de configuraciones
+spring.config.import=optional:configserver:http://localhost:8888
+````
