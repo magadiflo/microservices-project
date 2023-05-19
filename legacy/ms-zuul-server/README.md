@@ -349,3 +349,13 @@ public void configure(HttpSecurity http) throws Exception {
     .cors().configurationSource(this.corsConfigurationSource); <---------- Agregando configuración de CORS
 }
 ````
+
+---
+
+## Haciendo más robusta la key del JWT
+
+Para que la llave de la firma del token no quede totalmente plana, lo codificamos en base64, así lo hacemos más robusta.
+
+````
+jwtAccessTokenConverter.setSigningKey(Base64.getEncoder().encodeToString(this.jwtKey.getBytes()));
+````

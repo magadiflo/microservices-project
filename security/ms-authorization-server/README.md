@@ -1079,3 +1079,12 @@ concatenaba al **map(...)** del **findByUsername(..),** ya que este es un Option
 excepción cuando un username no existía, y esto es, porque la búsqueda la estamos haciendo **usando un clienteFeign**,
 y este **FeignClient** lanza una excepción del tipo **FeignException** cuando el usuario no existe, así que es por eso
 que manejamos el try-catch.
+---
+
+## Haciendo más robusta la key del JWT
+
+Para que la llave de la firma del token no quede totalmente plana, lo codificamos en base64, así lo hacemos más robusta.
+
+````
+jwtAccessTokenConverter.setSigningKey(Base64.getEncoder().encodeToString(this.environment.getProperty("config.security.oauth.jwt.key").getBytes()));
+````

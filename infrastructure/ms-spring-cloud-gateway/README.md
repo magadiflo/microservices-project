@@ -371,3 +371,70 @@ public SecurityWebFilterChain configure(ServerHttpSecurity http) {
             .build();
 }
 ````
+
+---
+
+## Implementando el componente Authentication Manager Reactive
+
+Creamos una clase de componente que implementará la interfaz **ReactiveAuthenticationManager**. De esa interfaz
+implementamos su método **authenticate(...)**.
+
+````
+@Component
+public class AuthenticationManagerJwt implements ReactiveAuthenticationManager {
+    private static Logger LOG = LoggerFactory.getLogger(AuthenticationManagerJwt.class);
+    @Value("${config.security.oauth.jwt.key}")
+    private String llaveJwt;
+
+    @Override
+    public Mono<Authentication> authenticate(Authentication authentication) {
+        LOG.info("Token: {}", authentication.getCredentials());
+        return Mono.just(authentication.getCredentials().toString())
+                .map(token -> {
+                    SecretKey llave = Keys.hmacShaKeyFor(Base64.getEncoder().encode(this.llaveJwt.getBytes()));
+                    return Jwts.parserBuilder().setSigningKey(llave).build()
+                            .parseClaimsJws(token).getBody();
+                })
+                .map(claims -> {
+                    String username = claims.get("user_name", String.class);
+                    List<String> roles = claims.get("authorities", List.class);
+                    Collection<GrantedAuthority> authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                    return new UsernamePasswordAuthenticationToken(username, null, authorities);
+                });
+    }
+}
+````
+
+Observamos en el código anterior que el **..getCredentials() es el token**, que **será pasado vía argumento
+authentication** en el Filtro que crearemos la próxima sección.
+
+Para que la llave no quede totalmente plana, lo codificamos en base64, así lo hacemos más robusta. Ese mismo cambio debe
+hacerse en el servidor de autorización OAuth2, para que tengan la misma firma. También, como estamos trabajando con Zuul
+necesitamos agregarle ese pequeño cambio.
+
+````
+SecretKey llave = Keys.hmacShaKeyFor(Base64.getEncoder().encode(this.llaveJwt.getBytes()));
+````
+
+El código siguiente, lo que hace es validar el token:
+
+````
+return Jwts.parserBuilder().setSigningKey(llave).build()
+````
+
+Si es válido, obtenemos los claims y lo retornamos al flujo que ahora será
+del tipo claims
+
+````
+.parseClaimsJws(token).getBody();
+````
+
+Finalmente, en el último map, obtenemos de los claims el **user_name** y los **authorities**
+(recordar que con esos nombres están en la estructura del jwt).
+
+````
+.map(claims -> {
+    String username = claims.get("user_name", String.class);
+    List<String> roles = claims.get("authorities", List.class);
+/* más código */
+````

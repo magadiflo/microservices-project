@@ -16,6 +16,7 @@ import org.springframework.security.oauth2.provider.token.TokenEnhancerChain;
 import org.springframework.security.oauth2.provider.token.store.JwtAccessTokenConverter;
 import org.springframework.security.oauth2.provider.token.store.JwtTokenStore;
 
+import java.util.Base64;
 import java.util.List;
 
 @RefreshScope
@@ -73,7 +74,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
     @Bean
     public JwtAccessTokenConverter jwtAccessTokenConverter() {
         JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-        jwtAccessTokenConverter.setSigningKey(this.environment.getProperty("config.security.oauth.jwt.key"));
+        jwtAccessTokenConverter.setSigningKey(Base64.getEncoder().encodeToString(this.environment.getProperty("config.security.oauth.jwt.key").getBytes()));
         return jwtAccessTokenConverter;
     }
 }
