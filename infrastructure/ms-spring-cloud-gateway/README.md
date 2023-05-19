@@ -248,7 +248,7 @@ spring:
 
 ---
 
-## Configurando servicio spring cloud gateway con algunas dependencias
+## Configurando servicio spring cloud gateway con algunas dependencias [Servidor de Recursos]
 
 Si trabajamos con este microservicio de Spring Cloud Gateway, necesitamos hacer configuraciones a
 fin de proteger las rutas a los distintos microservicios, tal como lo hicimos en el servidor de Zuul. Ahora, como este
@@ -321,8 +321,8 @@ La anotamos con **@EnableWebFluxSecurity** para habilitar la seguridad en WebFlu
 simplemente con la anotación agregada que es de configuración, tendremos un método bean que registrará un componente
 del tipo **SecurityWebFilterChain**, para hacer toda la configuración de seguridad.
 
-Por el momento, al tener solo esta configuración, cuando tratemos de acceder a cualquier
-endPoint, veremos que no podremos. Nos arrojará un **status 401 Unauthorized**.
+Por el momento, **al tener solo esta configuración**, cuando tratemos de acceder a cualquier
+endPoint, veremos que no podremos, **todos necesitan autenticación**. Nos arrojará un **status 401 Unauthorized**.
 
 ````
 @EnableWebFluxSecurity
@@ -342,3 +342,32 @@ public class SpringSecurityConfig {
 
 - **.anyExchange().authenticated()**, protegemos todas las rutas.
 - **.csrf().disable()**, deshabilitamos el token csrf que es para formularios. Aquí trabajaremos con API REST.
+
+---
+
+## Dando reglas de seguridad a nuestras rutas de Spring Cloud Gateway
+
+Al igual que en zuul agregamos reglas a las rutas de nuestros microservicios, aquí también haremos lo mismo. Cada,
+conjunto de rutas tendrá cierto nivel de acceso, por lo tanto, a la configuración que hicimos en la clase anterior,
+le agregamos nuestras reglas de seguridad:
+
+````
+@Bean
+public SecurityWebFilterChain configure(ServerHttpSecurity http) {
+    return http.authorizeExchange()
+            .pathMatchers("/api-base/authorization-server-base/**").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api-base/productos-base/api/v1/productos",
+                    "/api-base/items-base/api/v1/items",
+                    "/api-base/usuarios-base/usuarios",
+                    "/api-base/items-base/api/v1/items/producto/{productoId}/cantidad/{cantidad}",
+                    "/api-base/productos-base/api/v1/productos/{id}").permitAll()
+            .pathMatchers(HttpMethod.GET, "/api-base/usuarios-base/usuarios/{id}").hasAnyRole("ADMIN", "USER")
+            .pathMatchers("/api-base/productos-base/**",
+                    "/api-base/items-base/**",
+                    "/api-base/usuarios-base/**").hasRole("ADMIN")
+            .anyExchange().authenticated()
+            .and()
+            .csrf().disable()
+            .build();
+}
+````
