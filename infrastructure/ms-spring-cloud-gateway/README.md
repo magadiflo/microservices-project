@@ -512,3 +512,71 @@ el contexto de la autenticación usando ReactiveSecurityContextHolder:
 ````
 .flatMap(authentication -> chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication)));
 ````
+
+---
+
+## Registrando filtro JwtAuthenticationFilter en la configuración de Spring Security
+
+Anteriormente, habíamos creado nuestra clase de componente **JwtAuthenticationFilter** y ahora necesitamos
+registrarlo en la clase de configuración principal de Spring Security. Para eso aplicamos inyección de
+dependencia vía constructor y agregamos en el método nuestro filtro creado:
+
+````
+@EnableWebFluxSecurity
+public class SpringSecurityConfig {
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public SpringSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
+    
+    @Bean
+    public SecurityWebFilterChain configure(ServerHttpSecurity http) {
+        return http.authorizeExchange()
+                ......... /* más código */
+                .and()
+                .addFilterAt(this.jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .csrf().disable()
+                .build();
+    }
+}
+````
+
+Luego, ejecutamos todos los microservicios, y **probamos el acceso a los endpoints** desde postman. Generamos un token
+y tratamos de acceder a los endpoints protegidos con el token generado. Obviamente, en función del rol podremos acceder
+a cierto endpoint.
+
+La secuencia de ejecución de los microservicios debe ser:
+
+````
+[1°] ms-config-server
+[2°] ms-eureka-server
+[3°] --- Aquí si no importa el orden y con esos dos microservicios basta para hacer las pruebas -----
+- ms-usuarios
+- ms-authorization-server
+-------------------------------------------------------------------------------------------------
+[4°] ms-spring-cloud-gateway
+````
+
+### Probando ver usuarios - El usuario autenticado tiene ROLE_USER
+
+````
+[GET] http://127.0.0.1:8090/api-base/usuarios-base/usuarios/2
+
+REQUEST HEADER
+--------------
+Authorization: 
+Type: Bearer Token
+Token: <el token de abajo>
+
+Token del usuario con role ROLE_USER luego de autenticarse:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiZXhwIjoxNjg0NTQxMjQ1LCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6IjM3OTk1MDkwLTU4M2YtNDEyZC1iM2Q4LWM3MTJmZmU0NTRiMCIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.gTivPxXvSkwYMeZUVtAg4IBn5KHEhe2oiGzI9HsX5s8
+
+El Header a enviarse sería el siguiente:
+Key             Value
+-------------   -------------------------------
+Authorization   Bearer eyJhbGciOiJIUzI1NiI......
+````
+
+Al ejecutar la petición con los datos anteriores, nos mostrará que no podemos acceder porque ese endpoint está
+restringido solo para usuarios de ROLE_ADMIN y el que está haciendo la petición tiene ROLE_USER.
