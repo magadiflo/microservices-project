@@ -438,3 +438,77 @@ Finalmente, en el último map, obtenemos de los claims el **user_name** y los **
     List<String> roles = claims.get("authorities", List.class);
 /* más código */
 ````
+
+---
+
+## Implementando el componente JwtAuthenticationFilter
+
+Crearemos la clase de filtro para la autenticación llamada **JwtAuthenticationFilter**, implementamos
+la interfaz WebFilter e implementamos su método:
+
+````
+@Component
+public class JwtAuthenticationFilter implements WebFilter {
+
+    private final ReactiveAuthenticationManager reactiveAuthenticationManager;
+
+    public JwtAuthenticationFilter(ReactiveAuthenticationManager reactiveAuthenticationManager) {
+        this.reactiveAuthenticationManager = reactiveAuthenticationManager;
+    }
+
+    @Override
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        return Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION))
+                .filter(authHeader -> authHeader.startsWith("Bearer "))
+                .switchIfEmpty(chain.filter(exchange).then(Mono.empty()))
+                .map(authHeader -> authHeader.replace("Bearer ", ""))
+                .flatMap(token -> this.reactiveAuthenticationManager.authenticate(new UsernamePasswordAuthenticationToken(null, token)))
+                .flatMap(authentication -> chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication)));
+    }
+}
+````
+
+**Explicación:**
+
+Mediante el **(ServerWebExchange exchange,** podemos obtener el request y obtener el token que nos envían desde POSTMAN,
+desde algún servicio, etc., ese token es enviado en la cabecera mediante el **"Authorization: Bearer ..."**.
+
+Convertimos las cabeceras http Authorization en un mono:
+
+````
+return Mono.justOrEmpty(exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION))
+````
+
+Filtramos y preguntamos si el token inicia con "Bearer ":
+
+````
+.filter(authHeader -> authHeader.startsWith("Bearer "))
+````
+
+Si no viene con el Bearer, hacemos un switch y nos salimos del flujo usando el chain.filter(...):
+
+````
+.switchIfEmpty(chain.filter(exchange).then(Mono.empty()))
+````
+
+Como contiene el "Bearer ", lo limpiamos. Usamos un map, porque estamos retornando un nuevo string ya limpio
+
+````
+.map(authHeader -> authHeader.replace("Bearer ", ""))
+````
+
+Usamos un FlatMap porque estamos usando un reactiveAuthenticationManager método authenticate que nos retorna otro flujo,
+un tipo Mono. Le pasamos el token para que el otro componente lo valide, haga el tratamiento del token. Recordar que ese
+reactiveAuthenticationManager que estamos inyectando corresponde al **AuthenticationManagerJwt** que creamos en la clase
+anterior:
+
+````
+.flatMap(token -> this.reactiveAuthenticationManager.authenticate(new UsernamePasswordAuthenticationToken(null, token)))
+````
+
+Aquí usamos otro FlatMap, ya viene el authentication, continuamos con la ejecución de los filtros pero lo guardamos en
+el contexto de la autenticación usando ReactiveSecurityContextHolder:
+
+````
+.flatMap(authentication -> chain.filter(exchange).contextWrite(ReactiveSecurityContextHolder.withAuthentication(authentication)));
+````
