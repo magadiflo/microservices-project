@@ -311,3 +311,34 @@ En el application.properties agregamos la configuración para conectarnos al ser
 # Configuracion al servidor de configuraciones
 spring.config.import=optional:configserver:http://localhost:8888
 ````
+
+---
+
+## Implementando la clase de configuración Security Config
+
+Creamos nuestra clase principal de configuración de Spring Security a la que le llamaremos **SpringSecurityConfig**.
+La anotamos con **@EnableWebFluxSecurity** para habilitar la seguridad en WebFlux. Nuestra clase no implementará nada,
+simplemente con la anotación agregada que es de configuración, tendremos un método bean que registrará un componente
+del tipo **SecurityWebFilterChain**, para hacer toda la configuración de seguridad.
+
+Por el momento, al tener solo esta configuración, cuando tratemos de acceder a cualquier
+endPoint, veremos que no podremos. Nos arrojará un **status 401 Unauthorized**.
+
+````
+@EnableWebFluxSecurity
+public class SpringSecurityConfig {
+    @Bean
+    public SecurityWebFilterChain configure(ServerHttpSecurity http) {
+        return http.authorizeExchange()
+                .anyExchange().authenticated()
+                .and()
+                .csrf().disable()
+                .build();
+    }
+}
+````
+
+**Donde:**
+
+- **.anyExchange().authenticated()**, protegemos todas las rutas.
+- **.csrf().disable()**, deshabilitamos el token csrf que es para formularios. Aquí trabajaremos con API REST.
