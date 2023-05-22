@@ -283,3 +283,51 @@ Ahora, en el **ms-usuarios** es importante agregar el driver de conexión de pos
     <scope>runtime</scope>
 </dependency>
 ````
+
+---
+
+## Configurando PostgreSQL en Servidor de Configuración
+
+En el repositorio del servidor de configuración creamos un archivo de propiedad para este microservicio con el perfil
+de development: **ms-usuarios-development.properties**.
+
+A dicho archivo le agregaremos las configuraciones para conectarnos a PostgreSQL, etc.
+
+````
+# Datasource POSTGRESQL
+spring.datasource.url=jdbc:postgresql://localhost:5432/bd_spring_boot_cloud
+spring.datasource.username=postgres
+spring.datasource.password=magadiflo
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+# Configurando dialecto de POSTGRESQL
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQL95Dialect
+
+# Generando tablas: create, crea el esquema y destruye cualquier dato previo
+spring.jpa.hibernate.ddl-auto=create
+
+# Vista y formato en el log
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+
+# Para evitar que lance un error (no es grave, pero sí molesto) cuando se corre postgresql con spring boot
+spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
+````
+
+En el ms-usuarios, agregamos la dependencia de Spring Config:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+````
+
+En el application.properties de este microservicio agregamos la configuración para conectarnos al servidor de
+configuraciones:
+
+````
+# Configurando conexion a servidor de configuraciones
+spring.config.import=optional:configserver:http://localhost:8888
+spring.profiles.active=development
+````

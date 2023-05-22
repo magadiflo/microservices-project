@@ -12,3 +12,9 @@ abrirlos con IntelliJ IDEA.
   **Eureka Server, Spring Cloud Load Balanced, Resilience4j, etc..**.
 - **legacy**: Aquí irán las dependencias que anteriormente se usaban y que solo están disponibles
   para cierta versión antigua de Spring Boot, tal es el caso de: **Ribbon, Histryx, Zuul, etc..**.
+
+---
+
+## Repositorio Remoto donde se subieron los archivos de configuración
+
+[config-server-repo](https://github.com/magadiflo/config-server-repo/tree/main)
