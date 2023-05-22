@@ -128,3 +128,39 @@ microservicio no maneja persistencia jpa, es decir, solo necesitamos usar la cla
 una clase Entity, por lo tanto no necesitamos agregarle la anotación @EntityScan(...), pero si
 tuviéramos un servicio con persistencia (tal como este ms-productos) y necesitamos esa clase para
 trabajar con CRUD Repository, JPA/Hibernate, etc... ahí sí que sería necesario agregar la anotación`.
+---
+
+## Configurando Datasource MySQL en ms-productos
+
+**Si no configuramos ningún Datasource** y tenemos agregado en las dependencias la BD **h2**
+por defecto, usará esta última base de datos.
+
+Agregamos en el **pomx.xml**, la dependencia del Driver de MySQL:
+
+````
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <scope>runtime</scope>
+</dependency>
+````
+
+Agregamos configuraciones de Jpa y conexión a MySQL y al **application.properties**:
+
+````
+# Datasource MySQL
+spring.datasource.url=jdbc:mysql://localhost:3306/bd_spring_boot_cloud?serverTimezone=America/Lima
+spring.datasource.username=root
+spring.datasource.password=magadiflo
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# Configurando dialecto de MySQL
+spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
+
+# Generando tablas: create, crea el esquema y destruye cualquier dato previo
+spring.jpa.hibernate.ddl-auto=create
+
+# Vista y formato en el log
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+````
