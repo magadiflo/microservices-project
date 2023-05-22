@@ -164,3 +164,51 @@ spring.jpa.hibernate.ddl-auto=create
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 ````
+
+---
+
+## Configurando ambiente development con MySQL en Servidor de Configuración
+
+En el repositorio del servidor de configuraciones creamos un archivo llamado
+**ms-productos-development.properties** y agregamos a él las configuraciones
+de conexión del Datasource, el dialecto, etc., **realizadas en el apartado anterior**, con la
+finalidad de que estas configuraciones no estén hardcodeadas en el ms-productos, sino,
+se encuentren centralizadas en el repositorio del servidor de configuraciones.
+
+Recordar que **luego de agregado el archivo al repositorio local**, **pushear** los cambios
+para tenerlos en el **repositorio remoto**.
+
+Luego, en este punto del curso se pide agregar la dependencia de Spring Config Client, pero yo **ya lo había agregado en
+capítulos pasados**, cuando trabajamos con el **ms-items**.
+
+Como **estoy trabajando con módulos de maven**, la dependencia de **Spring Config Client**
+lo agregué en el **pom.xml** del módulo **business-domain**, ya que es una dependencia que lo tendrá
+tanto el **ms-items** como el **ms-productos**.
+
+A continuación se muestra la dependencia usada para que el ms-productos se comunique con Spring Config, pero
+``recordar que dicha dependencia ya la tiene nuestro ms-productos, pues la está heredando del módulo business-domain``:
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-starter-config</artifactId>
+</dependency>
+````
+
+También teníamos configurada en el **application.properties** la dirección que apunta al servidor de configuraciones,
+y esto fue porque, cuando en capítulos pasados agregamos la dependencia de spring cloud config, nuestro ms-productos,
+requería que se le agregue dicha configuración.
+
+Ahora, en este punto del curso se agregan la configuración que ya teníamos anteriormente más el perfil seleccionado:
+
+````
+# Configurando url al servidor de configuraciones
+spring.config.import=optional:configserver:http://localhost:8888
+spring.profiles.active=development
+````
+
+**NOTA**
+
+Recordar que el perfil seleccionado: **development**, corresponde con el archivo que creamos en el repositorio del
+servidor de configuraciones **ms-productos-development.properties** y es en donde colocamos las configuraciones
+de JPA y conexión a MySQL que se encontraban en el **application.properties** de este microservicio.
