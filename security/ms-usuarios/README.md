@@ -269,3 +269,17 @@ librería las entidades Usuario y Rol.
 
 Estas configuraciones ya no las detallo porque ya se hizo cuando se trabajó la
 librería ms-commons.
+---
+
+## Instalando PostgreSQL y creando la Base de Datos en pgAdmin
+
+En mi caso ya tengo instalado PostgreSQL, solo creé una base de datos llamada: bd_spring_boot_cloud.
+Ahora, en el **ms-usuarios** es importante agregar el driver de conexión de postgresql:
+
+````
+<dependency>
+    <groupId>org.postgresql</groupId>
+    <artifactId>postgresql</artifactId>
+    <scope>runtime</scope>
+</dependency>
+````
