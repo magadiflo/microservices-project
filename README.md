@@ -23,6 +23,8 @@ abrirlos con IntelliJ IDEA.
 
 ## Implementando Spring Cloud Sleuth
 
+> NOTA: A partir de aquí trabajaremos con Zuul Server para toda esta sección de trazabilidad.
+
 Como la dependencia de Spring Cloud Sleuth es usada en casi todos los microservicios de este proyecto, es que la
 información las iré anotando en este archivo README.md principal.
 
