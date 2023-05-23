@@ -120,3 +120,32 @@ MsUsuarios: 		  [ms-usuarios,5ca3f78663de87f7,51146e1683ec9003]
 
 Entonces, podría decirse que, la petición entra por **ms-zuul-server**, viaja a **ms-athorization-server** y desde
 allí se hacen tres peticiones a **ms-usuarios**.
+---
+
+## Obteniendo y desplegando Zipkin Server y Zipkin UI
+
+Zipkin es un sistema de rastreo distribuido. Ayuda a recopilar los datos de temporización necesarios para solucionar
+problemas de latencia en las arquitecturas de servicio. Las características incluyen tanto la recopilación como la
+búsqueda de estos datos.
+
+Tiene una interfaz gráfica que muestra la trazabilidad de los microservicios. Funciona como complemento de la
+dependencia **Spring Cloud Sleuth**.
+
+Para poder descargar el proyecto necesitamos ir a su página web hacer click en la opción **Java latest release**
+para que empiece a descargar un **.jar**:
+
+````
+https://zipkin.io/pages/quickstart.html
+````
+
+Ejecutamos el **.jar** descargado desde el cmd:
+
+````
+java -jar zipkin-server-2.24.1-exec.jar
+````
+
+Una vez que esté corriendo el programa, podemos acceder a su interfaz gráfica:
+
+````
+http://localhost:9411/zipkin
+````
