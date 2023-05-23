@@ -100,3 +100,74 @@ config.security.oauth.client.secret=frontendApp-12345
 # llave para firmar el token
 config.security.oauth.jwt.key=mi-clave-secreta-12345
 ````
+
+---
+
+## Configurando repositorio remoto GitHub como privado
+
+Para proteger nuestro repositorio que contiene los archivos de configuración, **lo haremos privado**. De tal forma que
+cuando se solicite algún archivo de configuración el servidor de configuraciones proporcione las credenciales correctas.
+
+### Haciendo privado el repositorio de configuraciones
+
+- Vamos al repositorio **config-server-repo**.
+- Vamos a la pestaña de Settings.
+- Nos dirigimos hacia abajo **Danger Zone**.
+- Cambiamos la visibilidad
+- Al finalizar el cambio veremos **un candadito** al costado del nombre del repositorio.
+
+### Creando un Personal Access Token
+
+En el curso de Andrés Guzmán se usa las credenciales del usuario de GitHub. Actualmente, GitHub ya no permite esa
+opción, es decir, el usar las credenciales propias del usuario de GitHub. En cambio, se puede generar un **Personal
+Access Token** más el nombre del usuario para que esa funcionalidad pueda darse.
+
+- Click en la imagen del perfil.
+- Click en settings.
+- Click en Developer Settings
+- Click en Personal Access Token
+- Click en Tokens (classic)
+- Generate new token
+    - Note: servidor de configuraciones <------ cualquier nota
+    - Expiration: 30 days <---- escogemos un tiempo de expiración del token
+    - Select scopes: [check] repo <---- solo esa opción
+- Generate Token
+- Copiamos el token y no lo perdemos ya que no se volverá a mostrar
+
+### Configurando credenciales al repositorio remoto privado
+
+Agregaremos la siguiente configuración en el **application.properties**:
+
+````
+spring.cloud.config.server.git.username=magadiflo
+spring.cloud.config.server.git.password=${REPO_CONFIG_PASS}
+````
+
+**NOTA:**
+
+Agregué una variable de ambiente **REPO_CONFIG_PASS**, para que a través de él podamos agregar el Personal Access Token
+generado en el apartado anterior.
+
+**IMPORTANTE**
+> Es importante que no guardemos el Personal Access Token en el repositorio de GitHub, es decir, que no hagamos
+> un push del archivo que contenga textualmente el token, ya que **si lo hacemos, GitHub lo va a detectar y lo eliminará
+> de inmediato**.
+
+### Cómo usar la variable de ambiente creada
+
+Existen distintas maneras de poder usarlas. Aquí explicaré dos formas:
+
+1. **Usando IntelliJ IDEA**, en el apartado de ejecución de los proyectos, vamos a **Edit...** de nuestro
+   **ms-config-server**. Luego en el apartado de **Environment variables** agregamos nuestra variable y su valor
+   de la siguiente manera:
+
+````
+REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
+````
+
+2. **Usando cmd**, para poder ejecutar un jar conteniendo la aplicación de **ms-config-server**. Teniendo el .jar
+   generado, procedemos a ejecutarlo agregando en la misma línea la variable de ambiente:
+
+````
+java -jar .\target\ms-config-server-0.0.1-SNAPSHOT.jar --REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
+````
