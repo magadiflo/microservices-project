@@ -149,3 +149,61 @@ Una vez que esté corriendo el programa, podemos acceder a su interfaz gráfica:
 ````
 http://localhost:9411/zipkin
 ````
+
+---
+
+## Conectando Zipkin en los microservicios
+
+Al igual que hicimos con la dependencia de **Sleuth**, igualmente haremos con la dependencia de **Zipkin**,
+lo agregaremos en cada uno de los microservicios. Agregaremos la siguiente dependencia proporcionada por
+spring initializr a los 5 microservicios con los que estamos trabajando, incluidos el ms-zuul-server.
+
+````
+<dependency>
+    <groupId>org.springframework.cloud</groupId>
+    <artifactId>spring-cloud-sleuth-zipkin</artifactId>
+</dependency>
+````
+
+**NOTA 01**:
+
+En el curso, usa la dependencia **spring-cloud-starter-zipkin**, pero cuando traté de agregar al proyecto
+no funciona, marca un error, así que spring initializr muestra esta nueva dependencia cuando buscamos **zipkin**.
+
+**NOTA 02**:
+
+Con esta dependencia (zipkin) hacemos que **el microservicio** que lo tenga sea un **cliente del servidor
+zipkin**.
+
+Ahora necesitamos **configurar parámetros de Sleuth** para **exportar las trazas a Zipkin**, que por defecto
+es 10%, es decir, solo el 10% de las trazas serán exportados a zipkin, pero nosotros lo cambiaremos para que siempre
+sean exportados todas 100%.
+
+Además, de forma opcional podemos configurar la ruta del servidor de **zipkin**, ya que por defecto, siempre irá a
+buscar en esa dirección la ruta del servidor:
+
+````
+# Probabilidad de exportar trazas. Cambiamos el 0.1 por defecto al 1
+spring.sleuth.sampler.probability=1.0
+
+# Opcional, configurar ruta del servidor zipkin
+spring.zipkin.base-url=http://127.0.0.1:9411/
+````
+
+A modo de ejemplo, solo en el **ms-items** agregamos estas dos configuraciones, en los microservicios restantes solo
+agregamos el de la probabilidad a 100%.
+
+### Ejecutando microservicios y viendo trazabilidad
+
+Debemos tener ejecutando el servidor de zipkin:
+
+````
+java -jar zipkin-server-2.24.1-exec.jar
+````
+
+Ahora, ejecutamos todos los 5 microservicios. Realizamos una petición, por ejemplo solicitar un token y vamos a la
+siguiente dirección para ver gráficamente el flujo de la petición pro los microservicios:
+
+````
+http://localhost:9411/zipkin/
+````
