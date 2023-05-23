@@ -207,3 +207,35 @@ siguiente dirección para ver gráficamente el flujo de la petición pro los mic
 ````
 http://localhost:9411/zipkin/
 ````
+
+---
+
+## Agregando atributos o tags personalizados en la traza
+
+Podemos agregar información adicional en la traza, a fin de poder exponerlas para poder visualizarlas en **Zipkin**.
+
+Para este ejemplo se trabajará con el **ms-authorization-server**. Lo primero a realizar será inyectar la
+clase **Tracer**.
+
+````
+import brave.Tracer;
+
+private final Tracer tracer;
+
+    /* más código */
+    private final Tracer tracer;    
+    /* más código */
+
+    public AuthenticationSuccessErrorHandler(/* más código */, Tracer tracer) {
+        /* más código */
+        this.tracer = tracer;
+    }
+    /* más código */
+}
+````
+
+Ahora podemos hacer uso de su método para agregar un mensaje, ejemplo:
+
+````
+this.tracer.currentSpan().tag("error.mensaje", errors.toString());
+````

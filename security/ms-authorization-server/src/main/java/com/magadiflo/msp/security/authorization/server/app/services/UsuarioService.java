@@ -1,5 +1,6 @@
 package com.magadiflo.msp.security.authorization.server.app.services;
 
+import brave.Tracer;
 import com.magadiflo.msp.security.authorization.server.app.clients.IUsuarioFeignClient;
 import com.magadiflo.msp.shared.library.usuarios.commons.app.models.entity.Usuario;
 import feign.FeignException;
@@ -19,9 +20,11 @@ import java.util.Optional;
 public class UsuarioService implements IUsuarioService, UserDetailsService {
     private static final Logger LOG = LoggerFactory.getLogger(UsuarioService.class);
     private final IUsuarioFeignClient usuarioFeignClient;
+    private final Tracer tracer;
 
-    public UsuarioService(IUsuarioFeignClient usuarioFeignClient) {
+    public UsuarioService(IUsuarioFeignClient usuarioFeignClient, Tracer tracer) {
         this.usuarioFeignClient = usuarioFeignClient;
+        this.tracer = tracer;
     }
 
     @Override
@@ -47,8 +50,11 @@ public class UsuarioService implements IUsuarioService, UserDetailsService {
                         return userDetails;
                     }).get();
         } catch (FeignException fe) {
-            LOG.error("[try-catch]Error en el login, no existe el usuario {} en el sistema", username);
-            throw new UsernameNotFoundException(String.format("[try-catch]Error en el login, no existe el usuario %s en el sistema", username));
+            String error = String.format("[try-catch]Error en el login, no existe el usuario %s en el sistema", username);
+
+            LOG.error(error);
+            this.tracer.currentSpan().tag("error.mensaje", String.format("%s : %s", error, fe.getMessage()));
+            throw new UsernameNotFoundException(error);
         }
     }
 

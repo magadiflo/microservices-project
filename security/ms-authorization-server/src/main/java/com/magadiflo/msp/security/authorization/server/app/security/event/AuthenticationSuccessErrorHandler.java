@@ -1,5 +1,6 @@
 package com.magadiflo.msp.security.authorization.server.app.security.event;
 
+import brave.Tracer;
 import com.magadiflo.msp.security.authorization.server.app.services.IUsuarioService;
 import com.magadiflo.msp.shared.library.usuarios.commons.app.models.entity.Usuario;
 import feign.FeignException;
@@ -15,11 +16,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
     private final IUsuarioService usuarioService;
+    private final Tracer tracer;
 
     private final static Logger LOG = LoggerFactory.getLogger(AuthenticationSuccessErrorHandler.class);
 
-    public AuthenticationSuccessErrorHandler(IUsuarioService usuarioService) {
+    public AuthenticationSuccessErrorHandler(IUsuarioService usuarioService, Tracer tracer) {
         this.usuarioService = usuarioService;
+        this.tracer = tracer;
     }
 
     @Override
@@ -37,8 +40,13 @@ public class AuthenticationSuccessErrorHandler implements AuthenticationEventPub
 
     @Override
     public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {
-        LOG.error("Error en el login: {}", exception.getMessage());
+        String mensaje = String.format("Error en el login: %s", exception.getMessage());
+        LOG.error(mensaje);
         try {
+            StringBuilder errors = new StringBuilder();
+            errors.append(mensaje);
+
+
             Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
 
             if (usuario.getIntentos() == null) {
@@ -47,10 +55,18 @@ public class AuthenticationSuccessErrorHandler implements AuthenticationEventPub
 
             usuario.setIntentos(usuario.getIntentos() + 1);
             LOG.info("N° de intentos fallidos: {}", usuario.getIntentos());
+            errors.append(" - ");
+            errors.append(String.format("N° de intentos fallidos: %d", usuario.getIntentos()));
 
             if (usuario.getIntentos() >= 3) {
+                String msgErrorMaximoIntento = String.format("El usuario %s deshabilitado 3 intentos fallidos", usuario.getUsername());
+
                 usuario.setEnabled(false);
-                LOG.info("El usuario {} deshabilitado 3 intentos fallidos", usuario.getUsername());
+
+                LOG.info(msgErrorMaximoIntento);
+
+                errors.append(" - ");
+                errors.append(msgErrorMaximoIntento);
             }
             this.usuarioService.update(usuario, usuario.getId());
 
