@@ -321,3 +321,63 @@ allowPublicKeyRetrieval = TRUE
 de error: ``public key retrieval is not allowed`` y no nos dejará ingresar.
 
 Luego de ingresar, debemos observar que **tenemos nuestra base de datos creada** sin ninguna tabla.
+
+---
+
+## Descargando imagen Docker para PostgreSQL y levantando la instancia (pull y run)
+
+Similar a como descargamos y levantamos mysql, ahora haremos lo mismo con PostgreSQL.
+
+Descargamos la imagen de PostresSQL, versión 12. Usamos el tag 12-alpine porque esa versión de postgres está en
+el SO alpine de linux que es muy ligero:
+
+````
+docker pull postgres:12-alpine
+````
+
+Listamos las imágenes y observamos que ya tenemos en nuestro Docker la imagen de postgres:
+
+````
+docker image ls
+
+--- Resultado ---
+REPOSITORY      TAG         IMAGE ID       CREATED             SIZE
+mysql           8           05db07cd74c0   About an hour ago   565MB
+eureka-server   v1.0.0      f3caf1354f57   About an hour ago   372MB
+config-server   v1.0.0      36bca5b29011   6 hours ago         362MB
+postgres        12-alpine   945704f99920   5 days ago          230MB
+````
+
+Ahora, crearemos un contenedor a partir de la imagen de postgres:
+
+````
+docker container run -p 5432:5432 --name ms-postgres12 --network ms-spring-cloud -e POSTGRES_PASSWORD=magadiflo -e POSTGRES_DB=bd_spring_boot_cloud -d postgres:12-alpine
+````
+
+**DONDE**:
+
+- Al igual que MySQL aquí usamos las variables de entorno para agregar el password y nombre de la base de datos,
+  mientras
+  que por defecto el nombre de usuario para postgres es **postgres**.
+- **-d**, le indicamos que correremos el contenedor en modo detached.
+
+Si queremos ver el **log** del contenedor que se está ejecutando, ejecutamos el siguiente comando:
+
+````
+docker container logs -f ms-postgres12
+````
+
+### Abriendo con DBeaver nuestra base de datos que está siendo ejecutada en nuestro contenedor "ms-postgres12"
+
+Abrimos DBeaver e ingresamos los datos para poder conectarnos a nuestro contenedor de Postgres:
+
+````
+/General
+Host: localhost
+Port: 5432
+Database: bd_spring_boot_cloud
+Nombre de usuario: postgres
+Contraseña: magadiflo
+````
+
+Luego de ingresar, debemos observar que **tenemos nuestra base de datos creada** sin ninguna tabla.
