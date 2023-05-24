@@ -171,3 +171,56 @@ REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
 ````
 java -jar .\target\ms-config-server-0.0.1-SNAPSHOT.jar --REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
 ````
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+
+---
+
+## Creando archivo Dockerfile para server config(Servidor de Configuración)
+
+Para poder generar nuestra imagen de nuestro **ms-config-server**, es necesario tener el **.jar** generado previamente,
+ya que será usado dentro del **Dockerfile**. Para generar el **.jar**, vamos a la raíz de ese microservicio y
+ejecutamos:
+
+````
+mvnw.cmd clean package
+````
+
+Terminada la construcción de nuestro .jar, se creará una carpeta **/target** conteniéndolo:
+**ms-config-server-0.0.1-SNAPSHOT.jar**
+
+### Construcción del Dockerfile
+
+En la raíz del **ms-config-server** creamos un archivo sin extensión llamado: **Dockerfile** quien contendrá toda
+la instrucción para poder generar una imagen de nuestro microservicio.
+
+````Dockerfile
+FROM openjdk:17-jdk-alpine
+VOLUME /tmp
+EXPOSE 8888
+ADD ./target/ms-config-server-0.0.1-SNAPSHOT.jar config-server.jar
+ENTRYPOINT ["java", "-jar", "/config-server.jar"]
+````
+
+**DONDE**
+
+- **FROM**, indica que la imagen que crearemos tendrá como base otra imagen ya existente
+- **openjdk:17-jdk-alpine**, imagen que contiene la versión de java 17. **(imagen: openjdk, tag: 17-jdk-alpine)**.
+- **VOLUME**, para montar un volumen.
+- **/tmp**, algunas aplicaciones de Spring la requieren, porque, por defecto **Tomcat guarda los logs** en ese
+  directorio. Ahora, como nuestras aplicaciones de microservicios son simples y el **log** lo maneja en consola (no lo
+  guarda en archivos), entonces ese directorio **/tmp** no sería necesario, es opcional, pero de todas formas lo
+  dejamos configurado.
+- **EXPOSE**, escribimos el puerto que vamos a exponer. Recordemos que el puerto que le definimos a este microservicio
+  fue el **8888**. **¡NOTA IMPORTANTE!**, este EXPOSE no es que vaya a mapear el contenedor a este puerto, sino que
+  solo **sirve para documentar**, para que otros desarrolladores sepan que los contenedores generados de esta imagen se
+  va a publicar o exponer en el puerto allí definido, en este caso, puerto 8888.
+- **ADD**, para agregar o copiar, en este caso un archivo (nuestro jar) a nuestra imagen. Recordar que anteriormente
+  generamos el **.jar** de **ms-config-server** y esta está en la carpeta
+  **/target/ms-config-server-0.0.1-SNAPSHOT.jar**, lo copiaremos en la **raíz de nuestra imagen**, tal cual o podemos
+  cambiarle el nombre, para hacerlo más sencillo **config-server.jar**
+- **ENTRYPOINT ["java", "-jar", "/config-server.jar"]**, ejecuta o levantar nuestra aplicación cuando se inicia el
+  contenedor. En nuestro caso, estamos agregando los comandos para ejecutar nuestro .jar para levantar nuestra
+  aplicación de Spring Boot.
