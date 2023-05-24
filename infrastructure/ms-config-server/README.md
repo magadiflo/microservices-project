@@ -224,3 +224,130 @@ ENTRYPOINT ["java", "-jar", "/config-server.jar"]
 - **ENTRYPOINT ["java", "-jar", "/config-server.jar"]**, ejecuta o levantar nuestra aplicación cuando se inicia el
   contenedor. En nuestro caso, estamos agregando los comandos para ejecutar nuestro .jar para levantar nuestra
   aplicación de Spring Boot.
+
+---
+
+## Construyendo imagen Docker de server config y levantando el contenedor
+
+Mediante el cmd nos posicionamos en la **raíz del ms-config-server**. En esa raíz debemos tener el Dockerfile trabajado
+anteriormente. Ahora ejecutamos el siguiente comando:
+
+````
+docker build -t config-server:v1.0.0 .
+````
+
+**DONDE**:
+
+- **docker build**, comando de docker para **construir una imagen**.
+- **-t**, es una bandera que nos permite definir un **tag name**. En nuestro caso, el nombre que le daremos a nuestra
+  imagen será **config-server** y el tag que le daremos será **v1.0.0**.
+- **.**, el punto al final de la instrucción indica dónde buscar el archivo Dockerfile en el directorio actual. Recordar
+  que nuestro directorio actual es la raíz del ms-config-server en el que estamos posicionados mediante cmd, y
+  precisamente allí está nuestro Dockerfile, por lo tanto, le estamos diciendo que busque nuestro Dockerfile en esa
+  raíz.
+
+Finalizado la construcción ejecutamos el siguiente comando para verificar que efectivamente sí se ha construido:
+
+````
+docker image ls
+````
+
+Resultado:
+
+````
+REPOSITORY      TAG       IMAGE ID       CREATED         SIZE
+config-server   v1.0.0    36bca5b29011   9 minutes ago   362MB
+````
+
+Creamos una red llamada **ms-spring-cloud** donde agregaremos a todos nuestros microservicios, de tal forma que
+puedan comunicarse entre sí, puesto que estarán en la misma red:
+
+````
+ docker network create ms-spring-cloud
+````
+
+### Creando un contenedor a partir de nuestra imagen dockerizada
+
+Una vez dockerizada nuestro contenedor y teniendo la red a donde nos conectaremos, ejecutaremos el siguiente comando
+para poder construir nuestro primer contenedor:
+
+````
+docker container run -p 8888:8888 --name config-server --network ms-spring-cloud -e REPO_CONFIG_PASS=ghp_mdNs6eo0jlO757... config-server:v1.0.0
+````
+
+**DONDE**:
+
+- **docker container run**, comando de docker para **ejecutar un contenedor**.
+- **-p**, nos indica el puerto. Tiene dos partes, el puerto externo e interno. El **externo** nos indica el puerto que
+  será visible desde nuestra pc local hacia el contenedor. El **interno** será el puerto que se maneja dentro del
+  contenedor. Ahora, en nuestro ejemplo, pusimos **8888:8888** referenciando al puerto **externo:interno**
+  respectivamente.
+- **--name**, nos permite darle un nombre a nuestro contenedor, en nuestro caso le pusimos **config-server**.
+- **--network**, le decimos que el contenedor estará **dentro de la red ms-spring-cloud** que creamos anteriormente.
+- **-e**, nos permite agregar **variables de ambiente**. Recordar que nosotros agregamos una variable de ambiente
+  en este microservicio, precisamente en el application.properties para poder leer el personal access token que creamos,
+  ya que hicimos nuestro repositorio de configuraciones privado. El **REPO_CONFIG_PASS=ghp_mdNs6eo0jlO757...**
+  corresponde al nombre de la variable de ambiente igualado a su valor. En este caso, no está completo el Personal
+  Access Token por eso agregamos los puntos, para evitar tener en esta documentación el token completo.
+- **config-server:v1.0.0**, nombre de la imagen (config-server) junto a su tag(v1.0.0), a partir del cual generaremos
+  el contenedor. Siempre va al final.
+
+**IMPORTANTE**:
+
+- Al ejecutar el comando anterior, el contenedor empezará a ejecutarse y por consiguiente nuestra aplicación de spring
+  boot, mostrándose en el cmd el log de nuestra aplicación de Spring Boot.
+- Nuestra aplicación ha tomado el control del cmd donde ejecutamos el comando anterior, es por eso que vemos el log.
+  Ahora, si solo queremos correr el contenedor sin ver el log de la aplicación, debimos agregar al comando anterior la
+  siguiente bandera **-d**, con el que le indicamos que corra el contenedor desenlazado (detached) de la consola donde
+  se ejecutó el comando.
+- Si queremos listar nuestro contendor en docker ejecutamos:
+
+````
+docker container ls -a
+
+---Resultado---                                                                                                           
+CONTAINER ID   IMAGE                  COMMAND                  CREATED          STATUS          PORTS                    NAMES        
+b76f7a421819   config-server:v1.0.0   "java -jar /config-s…"   22 minutes ago   Up 22 minutes   0.0.0.0:8888->8888/tcp   config-server
+````
+
+Ahora podemos acceder a nuestro contenedor desde nuestra pc local a través del puerto externo expuesto:
+
+````
+http://localhost:8888/ms-items/default
+````
+
+Resultado:
+
+````
+{
+    "name": "ms-items",
+    "profiles": [
+        "default"
+    ],
+    "label": null,
+    "version": "5dbf46accb0c710fc039592b4c42b396a2c46ddb",
+    "state": null,
+    "propertySources": [
+        {
+            "name": "https://github.com/magadiflo/config-server-repo.git/ms-items.properties",
+            "source": {
+                "server.port": "8005",
+                "configuracion.texto": "ConfiguraciÃ³n personalizada para el ambiente POR DEFECTO"
+            }
+        },
+        {
+            "name": "https://github.com/magadiflo/config-server-repo.git/application.properties",
+            "source": {
+                "config.security.oauth.client.id": "frontendApp",
+                "config.security.oauth.client.secret": "frontendApp-12345",
+                "config.security.oauth.jwt.key": "mi-clave-secreta-12345"
+            }
+        }
+    ]
+}
+````
+
+**CONCLUSIÓN**
+
+> Nuestro contendor está ejecutándose correctamente, y obviamente nuestro **ms-config-server** que está dentro
+> de dicho contenedor.
