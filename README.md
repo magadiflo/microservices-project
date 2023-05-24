@@ -241,3 +241,83 @@ Ahora podemos hacer uso de su método para agregar un mensaje, ejemplo:
 ````
 this.tracer.currentSpan().tag("error.mensaje", errors.toString());
 ````
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+
+---
+
+## Descargando imagen Docker para MySQL y levantando la instancia (pull y run)
+
+Como estamos trabajando con las bases de datos de Mysql y Postgres en nuestros microservicios, necesitamos descargar
+las imágenes dockerizadas de dichas bases de datos para seguir trabajando todo el proyecto con Docker. En esta
+oportunidad descargaremos la imagen dockerizada de MySQL. Lo podemos buscar en la página de ``https://hub.docker.com/``,
+allí se encuentran todas las imágenes oficiales.
+
+Para descargar la imagen, ejecutamos el siguiente comando:
+
+````
+docker pull mysql:8
+````
+
+**DONDE:**
+
+- **mysql**, la imagen a descargar
+- **8**, el tag que seleccionamos de la imagen. Este tag nos indica que descargaremos MySQL versión 8.
+
+Finalizada la descarga, listamos todas las imágenes para ver que ya tenemos la imagen de mysql en nuestro docker:
+
+````
+docker image ls
+
+--- Resultado ---
+REPOSITORY      TAG       IMAGE ID       CREATED          SIZE
+mysql           8         05db07cd74c0   18 minutes ago   565MB
+eureka-server   v1.0.0    f3caf1354f57   28 minutes ago   372MB
+config-server   v1.0.0    36bca5b29011   5 hours ago      362MB
+````
+
+### Creando contenedor para MySQL
+
+````
+docker container run -p 3306:3306 --name ms-mysql8 --network ms-spring-cloud -e MYSQL_ROOT_PASSWORD=magadiflo -e MYSQL_DATABASE=bd_spring_boot_cloud -d mysql:8
+````
+
+**DONDE**:
+
+- **--name ms-mysql8**, nombre que le damos al contenedor: **ms-mysql8**.
+- **-e**, para colocar variables de ambiente. La imagen de MySQL que descargamos requiere las siguientes variables
+  de ambiente: **MYSQL_ROOT_PASSWORD**, por defecto crea el usuario root y solo habría que agregar el password;
+  **MYSQL_DATABASE**, le especificamos el nombre de la base de datos que queremos que cree. **Importante**, por cada
+  variable de ambiente se tiene que colocar la bandera -e.
+- **-d**, para que el contenedor se ejecute por debajo, en background, en modo **detached** (separado de la consola).
+- **mysql:8**, la imagen que descargamos de docker hub.
+- Para una explicación a más detalle ver el **README** del **ms-config-server**.
+
+**IMPORTANTE**
+Como crearemos un contenedor de mysql que expondrá su puerto al 3306, es importante que ese puerto de nuestra pc física
+no esté ocupado. Por ejemplo, si tenemos en nuestra pc física corriendo la BD de MySQL en el puerto 3306 (por defecto)
+e intentamos levantar el contenedor de MySQL que expone externamente el puerto 3306, no se podrá, ya que el puerto
+lo tiene nuestra BD de la pc física. La solución simplemente es bajar el servicio de MySQL que corre en nuestra pc
+local, al menos mientras estemos trabajando con el contenedor de MySQL. **Otra opción sería usar otro puerto.**
+
+### Abriendo con DBeaver nuestra base de datos que está siendo ejecutada en nuestro contenedor "ms-mysql8"
+
+Abrimos DBeaver e ingresamos los datos para poder conectarnos a nuestro contenedor de MySQL:
+
+````
+/General
+Server Host: localhost
+Port: 3306
+Nombre de usuario: root
+Contraseña: magadiflo
+
+/Driver properties
+allowPublicKeyRetrieval = TRUE
+````
+
+**IMPORTANTE**, es importante que cambiemos el **allowPublicKeyRetrieval a TRUE**, sino, nos mostrará el mensaje
+de error: ``public key retrieval is not allowed`` y no nos dejará ingresar.
+
+Luego de ingresar, debemos observar que **tenemos nuestra base de datos creada** sin ninguna tabla.
