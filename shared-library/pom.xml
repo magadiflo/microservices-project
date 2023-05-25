@@ -4,13 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <groupId>com.magadiflo.msp</groupId>
-        <artifactId>microservices-project</artifactId>
-        <version>1.0-SNAPSHOT</version>
-    </parent>
+    <!-- Contendrá las librerías que vayamos creando, la estructura será similar al módulo legacy.
+     Ver el archivo README.md del microservice-project para saber por qué lo hice así-->
 
+    <groupId>com.magadiflo.msp</groupId>
     <artifactId>shared-library</artifactId>
+    <version>1.0-SNAPSHOT</version>
 
     <packaging>pom</packaging>
 

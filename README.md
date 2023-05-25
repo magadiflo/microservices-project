@@ -4,14 +4,75 @@ El curso que completé lo desarrollé con STS, mientras que en esta oportunidad,
 a modo de repaso, trabajaré los microservicios con **módulos de maven** para poder
 abrirlos con IntelliJ IDEA.
 
-# Estructura creada
+## Estructura creada
 
 - **business-domain**: Aquí irán todos los microservicios que formen parte del dominio del negocio, como
   **ms-products, ms-items, etc...**.
 - **infrastructure**: Aquí irán los ms que son parte fundamental de una arquitectura de microservicios, como
-  **Eureka Server, Spring Cloud Load Balanced, Resilience4j, etc..**.
+  **Eureka Server, Spring Cloud Load Balanced, Resilience4j, Config Server, Spring Cloud Gateway, etc..**.
 - **legacy**: Aquí irán las dependencias que anteriormente se usaban y que solo están disponibles
-  para cierta versión antigua de Spring Boot, tal es el caso de: **Ribbon, Histryx, Zuul, etc..**.
+  para cierta versión antigua de Spring Boot, tal es el caso de: **Ribbon, Hystrix, Zuul, etc..**, incluí también
+  el ms-items, ya que usa internamente la dependencia de Hystrix.
+- **security**: Aquí irán los microservicios correspondientes a la seguridad de la aplicación, como el ms-usuarios,
+  el ms-authorization-server (OAuth2), etc.
+- **shared-library**: aquí irán las librerías que vayamos creando, por ejemplo el ms-commons que incluye entidades
+  de productos e items, estas librerías las usaremos como dependencias en los microservicios que la requieran, como
+  el ms-productos y el ms-items. Otra librería sería el ms-usuarios-commons usada en el ms-usuarios y el
+  ms-authorization-server.
+
+## Solución al error cuando se intenta construir el .jar de un ms que tiene como dependencia una librería creada
+
+```SOLUCIÓN, modificar la estructura del pom.xml para que el parent de la librería apunte a spring boot```
+
+Con este error nos topamos, casi al finalizar el curso, en la sección de Docker. Para ponernos en contexto:
+> La estructura incial del módulo **shared-library** era que su **pom.xml** tenía como padre al pom.xml
+> del microservices-project, y las librerías dentro del shared-library tenían como padre al pom.xml del
+> shared-library, algo así:
+>
+> **microservices-project <- shared-library <- ms-commons**<br>
+> **microservices-project <- shared-library <- ms-usuarios-commons**<br>
+>
+> Ahora, estas librerías están como dependencia en los ms-products, ms-usuarios, etc.. es decir, están
+> siendo usadas por nuestros otros microservicios. Por lo tanto, cuando se intentaba, por ejemplo, construir
+> el .jar del ms-products (quien tenía como dependencia al ms-commons), nos mostraba el mensaje de error siguiente:<br>
+>
+> ``[ERROR] Failed to execute goal on project ms-productos: Could not resolve dependencies for project
+> com.magadiflo.msp.business.domain:ms-productos:jar:0.0.1-SNAPSHOT: Failed to collect dependencies
+> at com.magadiflo.msp.shared.library:ms-commons:jar:0.0.1-SNAPSHOT: Failed to read artifact descriptor
+> for com.magadiflo.msp.shared.library:ms-commons:jar:0.0.1-SNAPSHOT: Could not find artifact
+> com.magadiflo.msp:shared-library:pom:1.0-SNAPSHOT -> [Help 1]``<br>
+>
+> Investigué y no logré hallar la solución así que lo que hice fue similar a cómo tenemos estructurado el módulo
+> de **/legacy**, es decir que el pom.xml de cada librería debe apuntar a spring-boot-starter-parent, tener su
+> properties con la versión de java y la dependencia de test.
+
+````
+# Por ejemplo: ms-commons
+-------------------------
+<parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>2.7.11</version>
+    <relativePath/> <!-- lookup parent from repository -->
+</parent>
+
+<properties>
+  <java.version>17</java.version>
+  <spring-cloud.version>2021.0.6</spring-cloud.version>
+</properties>
+
+<dependencies>
+  <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+  </dependency>
+</dependencies>
+````
+
+**CONCLUSIÓN**, colocar el proyecto tal cual se descarga de spring initializr dentro del
+módulo /shared-library. Y al igual que el pom.xml de /legacy, **el pom.xml de /shared-library
+tampoco heredará de /microservices-project.**
 
 ---
 
