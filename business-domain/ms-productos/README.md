@@ -212,3 +212,110 @@ spring.profiles.active=development
 Recordar que el perfil seleccionado: **development**, corresponde con el archivo que creamos en el repositorio del
 servidor de configuraciones **ms-productos-development.properties** y es en donde colocamos las configuraciones
 de JPA y conexión a MySQL que se encontraban en el **application.properties** de este microservicio.
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+
+---
+
+## Creando archivo Dockerfile para ms-productos, build y run
+
+Al igual que hicimos con los microservicios de ms-config-server y ms-eureka-server, para poder contenerizar este
+microservicio, debemos crear un Dockerfile. Para ahorrarnos el trabajo, copiaremos el **Dockerfile** del
+ms-config-server y lo pegaremos en la raíz de este microservicio y realizaremos algunas modificaciones:
+
+**Primero**, como a este microservicio le definimos un **puerto aleatorio** (ver el application.properties), no
+sabemos exactamente cuál será el puerto que tomará cuando se ejecute, así que por esa razón el **EXPOSE** de este
+Dockerfile lo eliminamos, no va.
+
+Así quedaría el **Dockerfile** del ms-productos:
+
+````Dockerfile
+FROM openjdk:17-jdk-alpine
+VOLUME /tmp
+ADD ./target/ms-productos-0.0.1-SNAPSHOT.jar ms-productos.jar
+ENTRYPOINT ["java", "-jar", "/ms-productos.jar"]
+````
+
+Ahora, necesitamos generar el **.jar** para este microservicio desde la terminal. Ubicados en la raíz del ms-productos,
+ejecutamos el siguiente comando para generar el .jar:
+
+````
+mvnw.cmd clean package -DskipTests
+````
+
+**DONDE:**
+
+- **package**, nos empaqueta el .jar dentro del mismo proyecto ms-productos.
+- **-DskipTests**, nos permite saltarnos los tests. Esto es importante porque en el application.properties de este
+  microservicio tenemos configuraciones que apuntan a direcciones que no estamos ejecutando en este momento como el
+  eureka-server, o el de config-server, o el de la conexión a mysql. Entonces, para evitar que nos muestre errores
+  y no se construya el .jar, agregamos dicha bandera.
+
+**IMPORTANTE**
+
+> Como esta dependencia está usando la librería ms-commons que creamos en el módulo shared-library, **primero es
+> necesario compilar dicha librería**, así que nos vamos a la raíz del **ms-commons** y ejecutamos el siguiente
+> comando:
+>
+> mvnw.cmd clean install
+>
+> Con el comando anterior, no solo generaremos el .jar dentro del /target de la librería, sino que el .jar SE
+> INSTALARÁ en el REPOSITORIO LOCAL DE MAVEN, para que pueda ser usada como dependencia del microservicio que la
+> requiera.
+
+### Creando la imagen del ms-productos
+
+Debemos estar ubicados en la raíz de este microservicio con el cmd y ejecutar el siguiente comando:
+
+````
+docker build -t ms-productos:v1.0.0 .
+````
+
+Finalizado la construcción, verificamos si ya tenemos la imagen en docker:
+
+````
+docker image ls
+
+--- Resultado ---
+REPOSITORY      TAG         IMAGE ID       CREATED              SIZE
+ms-productos    v1.0.0      e82d48f34573   About a minute ago   391MB
+mysql           8           05db07cd74c0   21 hours ago         565MB
+eureka-server   v1.0.0      f3caf1354f57   21 hours ago         372MB
+config-server   v1.0.0      36bca5b29011   26 hours ago         362MB
+postgres        12-alpine   945704f99920   6 days ago           230MB
+````
+
+### Creando contenedor a partir de la imagen del ms-productos
+
+Antes de crear el contenedor para el ms-productos, es necesario que los contenedores de **ms-mysql8, eureka-server y
+config-server** estén ejecutándose, en caso estén detenidos iniciarlos con el siguiente comando:
+
+Por ejemplo, iniciando el contenedor ms-mysql8 que está detenido:
+
+````
+docker start ms-mysql8
+````
+
+Ahora sí podemos ejecutar el siguiente comando:
+
+````
+docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
+````
+
+**DONDE:**
+
+- **-P**, en **mayúscula y sin valor**, nos indica que **el puerto generado será aleatorio**, y eso está bien, porque
+  recordemos que en el ms-productos definimos en el application.properties que el puerto será aleatorio.
+
+**NOTA:**
+
+- El atributo **--name** que nos permite agregar un nombre a este contenedor, para este microservicio será opcional,
+  ya que en ningún otro lugar haremos referencia a este microservicio. Recordemos que se conecta con Eureka y con el
+  Servidor de configuraciones por debajo, pero accediendo a la ruta url, a los endpoints propios de Eureka y del
+  Servidor de Configuraciones.
+
+Si todo se ejecutó correctamente, verificamos que nuestro microservicio de productos esté en eureka server. Podemos
+acceder a través de esta url: http://localhost:8761/, además si abrimos **DBeaver** debemos ver que la base de datos
+tiene poblada la tabla productos.
