@@ -415,3 +415,28 @@ recursos de base de datos o también cuando queremos conectar un microservicio c
 configuración, etc. Por ejemplo, nuestro ms-productos necesita conectarse a la base de datos de MySQL y como nuestro
 ms-productos será contenerizado, este se comunicará a nuestra BD MySQL contenerizada a través del nombre del contenedor
 de la base de datos.
+---
+
+## Configurando URL de Eureka y Server Config en cada Microservicio
+
+Nuevamente, como ahora nuestros microservicios estarán contenerizados, necesitamos que estos apunten al nombre del
+contenedor. Veamos cómo lo haremos:
+
+En el **application.properties** cambiamos el **localhost** para que apunte al contenedor de eureka
+y al del servidor de configuraciones, esto lo haremos en los siguientes microservicios:
+
+- ms-productos
+- ms-usuarios
+- ms-zuul-server
+- ms-authorization-server
+- ms-items
+
+````
+# Apuntando al contenedor de Eureka
+eureka.client.service-url.defaultZone=http://eureka-server:8761/eureka
+````
+
+````
+# Apuntando al contenedor de Spring Config
+spring.config.import=optional:configserver:http://config-server:8888
+````
