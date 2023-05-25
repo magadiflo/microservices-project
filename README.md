@@ -381,3 +381,37 @@ Contraseña: magadiflo
 ````
 
 Luego de ingresar, debemos observar que **tenemos nuestra base de datos creada** sin ninguna tabla.
+
+---
+
+## Configurando nombre de servidor de MySQL y PostgreSQL en repositorio Git
+
+Modificaremos los archivos de configuración que están en el repositorio de configuración para que apunte a las bases
+de datos que están contenerizados: mysql y postgres.
+
+Modificaremos el archivo **ms-productos-development.properties**, reemplazando el **localhost** por el nombre que le
+dimos a nuestro contenedor de mysql, el cual fue: **ms-mysql8**:
+
+````
+spring.datasource.url=jdbc:mysql://ms-mysql8:3306/bd_spring_boot_cloud?serverTimezone=America/Lima
+````
+
+Lo mismo haremos con el archivo **ms-usuarios-development.properties**, cambiando el **localhost** por el nombre que
+le dimos al contenedor de postgres: **ms-postgres12**:
+
+````
+spring.datasource.url=jdbc:postgresql://ms-postgres12:5432/bd_spring_boot_cloud
+````
+
+Finalmente, debemos hacer un commit y subir los cambios al repositorio remoto de GitHub.
+
+#### ¿Por qué cambiamos el localhost al nombre de los contenedores?
+
+Como ahora estamos contenerizando todos nuestros proyectos, y hasta este momento ya tenemos contenerizado nuestras
+bases de datos MySQL y PostgreSQL, también el ms-config-server y el ms-eureka-server y así iremos contenerizando los
+demás microservicios, es necesario para que estos puedan comunicarse, cambiar en vez de localhost al nombre del
+contenedor que les dimos con el --name, de esa forma podemos enlazar las comunicaciones entre microservicios ya sea
+recursos de base de datos o también cuando queremos conectar un microservicio cliente con eureka o con el servidor de
+configuración, etc. Por ejemplo, nuestro ms-productos necesita conectarse a la base de datos de MySQL y como nuestro
+ms-productos será contenerizado, este se comunicará a nuestra BD MySQL contenerizada a través del nombre del contenedor
+de la base de datos.
