@@ -207,18 +207,26 @@ para obtener dichas configuraciones. Agregamos la dependencia de config client:
 </dependency>
 ````
 
-Ahora, en el **application.properties** de nuestro **ms-zuul-server** agregamos
-las configuracinoes que apunten al servidor de configuraciones:
+Ahora, como este microservicio está trabajando con una versión antigua de Spring Boot (2.3.12.RELEASE), debemos
+crear dentro del directorio **/resources** el archivo **bootstrap.properties** donde agregaremos las configuraciones que
+apunten al servidor de configuraciones:
 
 ````
-# Configuracion al servidor de configuraciones
-spring.config.import=optional:configserver:http://localhost:8888
+# En el archivo bootstrap.properties
+------------------------------------
 
-# Habilita los endpoints de Spring Actuator
-management.endpoints.web.exposure.include=*
+spring.application.name=ms-zuul-server          <----- nombre de nuestro microservicio de zuul server
+spring.cloud.config.uri=http://localhost:8888   <----- donde actualmente está el servidor de configuraciones
+management.endpoints.web.exposure.include=*     <----- habilita los endpoints de Spring Actuator
 ````
 
-La segunda configuración de **Spring Actuator**, es por si agregamos la dependencia
+**NOTA:**
+> En los otros microservicios, donde estoy usando la **versión de Spring Boot 2.7.11** no es necesario agregar el
+> archivo bootstrap.properties, ya que si no mal recuerdo a partir de la versión 2.4.x se quitó esa opción y se agregó
+> una nueva forma de configurar, sería en el application.properties agregar esta opción:
+> ``spring.config.import=optional:configserver:http://localhost:8888``
+
+La configuración de **Spring Actuator**, es por si agregamos la dependencia
 de Spring Actuator a este servidor con la finalidad de poder actualizar los valores
 de las configuraciones sin necesidad de reiniciar la aplicación.
 

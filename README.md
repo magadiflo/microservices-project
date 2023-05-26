@@ -488,7 +488,7 @@ y al del servidor de configuraciones, esto lo haremos en los siguientes microser
 
 - ms-productos
 - ms-usuarios
-- ms-zuul-server
+- ms-zuul-server   <----------- application.properties y bootstrap.properties
 - ms-authorization-server
 - ms-items
 
