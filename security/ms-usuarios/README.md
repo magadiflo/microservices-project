@@ -331,3 +331,80 @@ configuraciones:
 spring.config.import=optional:configserver:http://localhost:8888
 spring.profiles.active=development
 ````
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+
+---
+
+## Creando Dockerfile para servicio usuarios, build y run
+
+Copiamos el mismo Dockerfile de productos y le realizamos las modificaciones correspondientes. Recordar que en el
+ms-usuarios definimos el puerto como dinámico, por lo tanto, en el Dockerfile no colocaremos el **EXPOSE**:
+
+````Dockerfile
+FROM openjdk:17-jdk-alpine
+VOLUME /tmp
+ADD ./target/ms-usuarios-0.0.1-SNAPSHOT.jar ms-usuarios.jar
+ENTRYPOINT ["java", "-jar", "/ms-usuarios.jar"]
+````
+
+Ahora, como nuestro **ms-usuarios** está usando la librería que creamos **ms-usuarios-commons**, necesitamos instalarla
+dentro del repositorio local de maven. Para eso nos posicionamos mediante cmd en la raíz de nuestra librería
+**ms-usuarios-commons** y ejecutamos:
+
+````
+mvnw.cmd clean install
+````
+
+Como siguiente paso, es crear nuestro .jar de nuestro ms-usuarios, para eso nos posicionamos en la raíz de dicho
+microservicio, ejecutamos:
+
+````
+mvnw.cmd clean package -DskipTests
+````
+
+Con nuestro .jar construido y con el Dockerfile configurado, es momento de crear nuestra imagen ejecutando el
+siguiente comando:
+
+````
+docker build -t ms-usuarios:v1.0.0 .
+````
+
+Listamos las imágenes para ver que ya tengamos el nuestro:
+
+````
+docker image ls
+
+--- Resultado ---
+REPOSITORY       TAG         IMAGE ID       CREATED              SIZE
+ms-usuarios      v1.0.0      b43925444814   About a minute ago   391MB
+ms-zuul-server   v1.0.0      59bca3de6caf   15 hours ago         160MB
+ms-productos     v1.0.0      e82d48f34573   22 hours ago         391MB
+mysql            8           05db07cd74c0   42 hours ago         565MB
+eureka-server    v1.0.0      f3caf1354f57   42 hours ago         372MB
+config-server    v1.0.0      36bca5b29011   47 hours ago         362MB
+postgres         12-alpine   945704f99920   6 days ago           230MB
+````
+
+Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes contenedores estén ejecutándose:
+
+- config-server
+- eureka-server
+- ms-postgres12
+
+a partir de la imagen anterior, crearemos nuestro contenedor:
+
+````
+docker container run -P --network ms-spring-cloud ms-usuarios:v1.0.0
+````
+
+**NOTA**
+
+1. Observamos que colocamos la bandera **-P** en mayúscula, y es porque definimos en el ms-usuarios el puerto en
+   aleatorio.
+2. Como observamos, en el comando anterior no colocamos el **--name,** ya que para este contenedor
+   **nombre es opcional**, y eso es porque en ninguna parte haremos referencia del ms-usuarios en otros microservicios a
+   diferencia de lo que pasa con eureka o config server donde necesitamos apuntar a sus endpoints, rutas, entonces para
+   poder conectarnos a esos servidores necesitamos **sí o sí** el nombre de cada contenedor.
