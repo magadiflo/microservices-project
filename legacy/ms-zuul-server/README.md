@@ -367,3 +367,74 @@ Para que la llave de la firma del token no quede totalmente plana, lo codificamo
 ````
 jwtAccessTokenConverter.setSigningKey(Base64.getEncoder().encodeToString(this.jwtKey.getBytes()));
 ````
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+
+---
+
+## Creando Dockerfile para Gateway Zuul, build y run
+
+En la raíz del microservicio ms-zuul-server creamos el archivo Dockerfile y agregamos configuraciones, pero como ya
+tenemos algunos Dockerfile creados copiaremos uno y lo pegaremos y a continuación realizaremos las modificaciones:
+
+````Dockerfile
+FROM openjdk:8-jdk-alpine
+VOLUME /tmp
+EXPOSE 8090
+ADD ./target/ms-zuul-server-0.0.1-SNAPSHOT.jar zuul-server.jar
+ENTRYPOINT ["java", "-jar", "/zuul-server.jar"]
+````
+
+**NOTA**
+
+> Como ms-zuul-server está trabajando con java 8, necesitamos que la imagen de donde arrancaremos
+> también tenga esa versión de java
+
+Ahora, posicionados mediante cmd en la raíz de este microservicio generaremos el .jar para poder crear la imagen:
+
+````
+mvnw.cmd clean package -DskipTests
+````
+
+Al igual que hicimos con el ms-productos para poder generar su .jar, necesitamos agregar la bandera **-DskipTests**
+para saltarnos el test, ya que este microservicio se tratará de comunicar con el servidor de configuraciones y también
+con eureka server y lanzará error, porque esos servicios no están ejecutándose.
+
+Ahora que ya tenemos el **.jar**, es momento de crear la imagen, siempre mediante cmd en la raíz de este microservicio:
+
+````
+docker build -t ms-zuul-server:v1.0.0 .
+````
+
+Verificamos que se haya creado la imagen:
+
+````
+docker image ls
+
+--- Resultado ---
+REPOSITORY       TAG         IMAGE ID       CREATED          SIZE
+ms-zuul-server   v1.0.0      3848d563ccbd   24 seconds ago   381MB
+ms-productos     v1.0.0      e82d48f34573   3 hours ago      391MB
+mysql            8           05db07cd74c0   24 hours ago     565MB
+eureka-server    v1.0.0      f3caf1354f57   24 hours ago     372MB
+config-server    v1.0.0      36bca5b29011   29 hours ago     362MB
+postgres         12-alpine   945704f99920   6 days ago       230MB
+````
+
+**IMPORTANTE**
+> Ahora, antes de crear el contenedor, nos aseguramos de tener el contendor **config-server y eureka-server** levantados
+
+
+Finalmente, ejecutamos un contenedor a partir de nuestra imagen de zuul server:
+
+````
+docker container run -p 8090:8090 --network ms-spring-cloud ms-zuul-server:v1.0.0
+````
+
+Podemos verificar a través de eureka que nuestro microservicio ms-eureka-server esté registrado:
+
+````
+http://localhost:8761/
+````
