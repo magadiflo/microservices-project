@@ -1088,3 +1088,60 @@ Para que la llave de la firma del token no quede totalmente plana, lo codificamo
 ````
 jwtAccessTokenConverter.setSigningKey(Base64.getEncoder().encodeToString(this.environment.getProperty("config.security.oauth.jwt.key").getBytes()));
 ````
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+---
+
+## Creando Dockerfile para servicio OAuth 2, build y run
+
+Creamos el archivo Dockerfile en la raíz de este microservicio agregándole las siguientes configuraciones:
+
+````Dockerfile
+FROM openjdk:17-jdk-alpine
+VOLUME /tmp
+EXPOSE 9100
+ADD ./target/ms-authorization-server-0.0.1-SNAPSHOT.jar authorization-server.jar
+ENTRYPOINT ["java", "-jar", "/authorization-server.jar"]
+````
+
+Generamos el **.jar** de este microservicio:
+
+````
+mvnw.cmd clean package -DskipTests
+````
+
+Con el .jar generado anteriormente y nuestro Dockerfile configurado, creamos la imagen:
+
+````
+docker build -t authorization-server:v1.0.0 .
+````
+
+Listamos las imágenes y debemos ver el nuestro en docker:
+
+````
+docker image ls
+
+--- Resultado ---
+REPOSITORY             TAG         IMAGE ID       CREATED              SIZE
+authorization-server   v1.0.0      2a56462d2573   About a minute ago   374MB
+ms-usuarios            v1.0.0      b43925444814   40 minutes ago       391MB
+ms-zuul-server         v1.0.0      59bca3de6caf   15 hours ago         160MB
+ms-productos           v1.0.0      e82d48f34573   22 hours ago         391MB
+mysql                  8           05db07cd74c0   43 hours ago         565MB
+eureka-server          v1.0.0      f3caf1354f57   43 hours ago         372MB
+config-server          v1.0.0      36bca5b29011   2 days ago           362MB
+postgres               12-alpine   945704f99920   6 days ago           230MB
+````
+
+Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes contenedores estén ejecutándose:
+
+- config-server
+- eureka-server
+
+Ahora, a partir de la imagen anterior, crearemos nuestro contenedor:
+
+````
+docker container run -p 9100:9100 --network ms-spring-cloud authorization-server:v1.0.
+````
