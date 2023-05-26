@@ -319,3 +319,52 @@ docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
 Si todo se ejecutó correctamente, verificamos que nuestro microservicio de productos esté en eureka server. Podemos
 acceder a través de esta url: http://localhost:8761/, además si abrimos **DBeaver** debemos ver que la base de datos
 tiene poblada la tabla productos.
+---
+
+## Escalando más instancias en ms-productos
+
+Para poder escalar el ms-productos a fin de tener más instancias (contenedores) simplemente ejecutamos el comando para
+crear un nuevo contenedor. En nuestro caso, para ejemplificar el escalado del ms-productos haremos un ejemplo con el
+contenedor de productos e items.
+
+Como primer paso, levantamos los siguientes contenedores en esta secuencia:
+
+- config-server
+- eureka-server
+- ms-mysql8
+- 517e18ed49c5 <-- corresponde al contenedor del ms-items, como no le dimos un nombre usaremos su id de contenedor.
+- 782591c6e54b <-- corresponde al contenedor del ms-productos, la única instancia que tenemos hasta este momento.
+- [contenedor 2 para ms-productos]
+- [contenedor 3 para ms-productos]
+- [contenedor n para ms-productos]
+- cf77cf2c850a <-- corresponde al contenedor del ms-zuul-server
+
+Como observamos en la secuencia anterior, podemos levantar **n cantidades** de contenedores para productos, las que
+quisiéramos, para eso simplemente por cada nueva instancia o contenedor requerida, ejecutamos el siguiente comando
+para construir un nuevo contenedor **a partir de la misma imagen** del ms-productos:
+
+````
+docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
+````
+
+**DONDE**
+
+- Recordemos que el **-P** en mayúscula es porque nuestro ms-productos tiene asignado un puerto aleatorio
+
+Nosotros crearemos dos contenedores más para tener 3 contenedores en total para el ms-productos. Finalmente, para poder
+ver los contenedores ejecutándose, los listamos:
+
+````
+docker container ls
+
+--- Resultado ---
+CONTAINER ID   IMAGE                   COMMAND                  CREATED          STATUS          PORTS                                                                    NAMES
+782591c6e54b   ms-productos:v1.0.0     "java -jar /ms-produ…"   30 minutes ago   Up 30 minutes                                                                            elastic_williams
+6276bbaf4cc1   ms-productos:v1.0.0     "java -jar /ms-produ…"   44 minutes ago   Up 35 minutes                                                                            serene_visvesvaraya
+517e18ed49c5   ms-items:v1.0.0         "java -jar /ms-items…"   4 hours ago      Up 35 minutes   0.0.0.0:8002->8002/tcp, 0.0.0.0:8005->8005/tcp, 0.0.0.0:8007->8007/tcp   interesting_villani
+cf77cf2c850a   ms-zuul-server:v1.0.0   "java -jar /zuul-ser…"   21 hours ago     Up 34 minutes   0.0.0.0:8090->8090/tcp                                                   objective_pasteur
+6dbaa787ec80   config-server:v1.0.0    "java -jar /config-s…"   24 hours ago     Up 38 minutes   0.0.0.0:8888->8888/tcp                                                   config-server
+d2a91b629506   ms-productos:v1.0.0     "java -jar /ms-produ…"   28 hours ago     Up 35 minutes                                                                            sharp_boyd
+21a90969a416   mysql:8                 "docker-entrypoint.s…"   2 days ago       Up 37 minutes   0.0.0.0:3306->3306/tcp, 33060/tcp                                        ms-mysql8
+96081270d2b9   eureka-server:v1.0.0    "java -jar /eureka-s…"   2 days ago       Up 38 minutes   0.0.0.0:8761->8761/tcp                                                   eureka-server
+````
