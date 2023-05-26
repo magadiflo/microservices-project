@@ -601,4 +601,91 @@ public class MsItemsApplication {
 }
 ````
 
-Ahora, si en este proyecto quisieramos BD debemos quitar esta anotación y configurar la URL de conexión.
+Ahora, si en este proyecto quisiéramos BD debemos quitar esta anotación y configurar la URL de conexión.
+
+---
+
+# Sección 14: Desplegando Microservicios en Contenedores Docker
+---
+
+## Creando Dockerfile para ms-items, build y run
+
+Creamos el Dockerfile en la raíz de este microservicio y agregamos las siguientes configuraciones:
+
+````Dockerfile
+FROM openjdk:17-jdk-alpine
+VOLUME /tmp
+EXPOSE 8002 8005 8007
+ADD ./target/ms-items-0.0.1-SNAPSHOT.jar ms-items.jar
+ENTRYPOINT ["java", "-jar", "/ms-items.jar"]
+````
+
+**NOTA**
+> Como en este microservicio estamos haciendo uso de varios puertos para sus distintos perfiles, es que necesitamos
+> definir en el **EXPOSE** dichos puertos. Recordar, como mencionó Andrés Guzmán, este EXPOSE únicamente es a modo de
+> documentación, para decirle al mundo qué puertos están disponible.
+
+Ahora, antes de generar el .jar para este microservicio, necesitamos agregar el .jar de la librería **ms-commons**
+al repositorio local de maven, ya que este microservicio está haciendo uso de él. Entonces, posicionados en dicha
+librería ejecutamos:
+
+````
+ mvnw.cmd clean install
+````
+
+Ahora sí es posible generar el .jar para nuestro ms-items:
+
+````
+mvnw.cmd clean package -DskipTests
+````
+
+Creamos la imagen docker:
+
+````
+docker build -t ms-items:v1.0.0 .
+````
+
+Listamos las imágenes para ver que ya tenemos el nuestro en docker:
+
+````
+docker image ls
+
+--- Respuesta ---
+REPOSITORY             TAG         IMAGE ID       CREATED             SIZE
+ms-items               v1.0.0      b9b1c6f5e5ed   3 minutes ago       390MB
+authorization-server   v1.0.0      2a56462d2573   42 minutes ago      374MB
+ms-usuarios            v1.0.0      b43925444814   About an hour ago   391MB
+ms-zuul-server         v1.0.0      59bca3de6caf   16 hours ago        160MB
+ms-productos           v1.0.0      e82d48f34573   23 hours ago        391MB
+mysql                  8           05db07cd74c0   44 hours ago        565MB
+eureka-server          v1.0.0      f3caf1354f57   44 hours ago        372MB
+config-server          v1.0.0      36bca5b29011   2 days ago          362MB
+postgres               12-alpine   945704f99920   7 days ago          230MB
+````
+
+Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes contenedores estén ejecutándose:
+
+- config-server
+- eureka-server
+
+Ahora, a partir de la imagen anterior, crearemos nuestro contenedor:
+
+````
+docker container run -p 8002:8002 -p 8005:8005 -p 8007:8007 --network ms-spring-cloud ms-items:v1.0.0
+````
+
+**DONDE**
+
+- **8002**, corresponde al puerto definido en **application.properties** del mismo microservicio.
+- **8005**, corresponde al puerto definido en el **ms-items.properties** ubicado en el repositorio del
+  servidor de configuraciones.
+- **8007**, corresponde al puerto definido en **ms-items-production.properties** ubicado en el repositorio del
+  servidor de configuraciones.
+
+**NOTA**
+> Cuando se ejecute el contenedor el puerto que tomará será el 8005, porque en el application.properties definimos
+> como perfil activo a "development" y si nos vamos al perfil ms-items-development.properties ubicado en el
+> repositorio del servidor de configuraciones veremos que allí no hay ningún puerto definido, pero dentro de dicho
+> repositorio tenemos el perfil por default: ms-items.properties, y allí sí está el puerto en 8005, por lo tanto,
+> tomará dicho puerto, ya que, las configuraciones que no existan en el perfil seleccionado las tomará del
+> perfil por defecto.
