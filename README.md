@@ -501,3 +501,79 @@ eureka.client.service-url.defaultZone=http://eureka-server:8761/eureka
 # Apuntando al contenedor de Spring Config
 spring.config.import=optional:configserver:http://config-server:8888
 ````
+
+---
+
+# Despliegue de contenedores con docker compose
+
+---
+**Docker compose** nos va a permitir levantar contenedores a partir de las imágenes que tenemos de nuestros
+microservicios, de esa forma evitamos estar escribiendo los comandos por **cmd**.
+
+El **primer paso** a seguir es **eliminar todos los contenedores** que tenemos en docker, porque los volveremos a
+levantar, pero esta vez usando **docker-compose**.
+
+El **segundo paso** es crear el archivo **docker-compose.yml**, en nuestro caso lo crearemos en la raíz de nuestro
+proyecto de módulos principal **/microservices-project**.
+
+Ahora, agregaremos las siguientes configuraciones en nuestro archivo **docker-compose.yml**:
+
+````yml
+version: "3.9"
+services:
+  config-server:
+    container_name: config-server
+    image: config-server:v1.0.0
+    ports:
+      - "8888:8888"
+    env_file:
+      - ./infrastructure/ms-config-server/.env
+    restart: always
+    networks:
+      - ms-spring-cloud
+  eureka-server:
+    container_name: eureka-server
+    image: eureka-server:v1.0.0
+    ports:
+      - "8761:8761"
+    restart: always
+    networks:
+      - ms-spring-cloud
+networks:
+  ms-spring-cloud:
+    name: ms-spring-cloud
+````
+
+**DONDE**
+
+- **version**, indica la versión del formato del archivo docker-compose.yml (el compose file format).
+- **services**, es un arreglo que contendrá todos los contendores o servicios.
+- **config-server**, nombre del que le daremos al servicio.
+- **container_name: config-server**, es el nombre de la instancia que le daremos a nuestro contenedor para el
+  ms-config-server. Es equivalente al --name que usamos en el cmd.
+- **image: config-server:v1.0.0**, el nombre de la imagen más su tag que tenemos en docker.
+- **ports**, corresponde al puerto externo:interno que usaremos. Es un arreglo, por eso va en guion.
+- **env_file**, le indicamos la ruta donde está nuestro archivo .env donde tenemos la variable de ambiente
+  REPO_CONFIG_PASS.
+- **restart: always**, le decimos que siempre se reinicie, por ejemplo si ocurre algún error, que vuelva a reiniciarse.
+- **networks: - ms-spring-cloud**, le decimos que use la red que tenemos creada.
+- **networks: ms-spring-cloud: name: ms-spring-cloud**, creamos la red que usaremos, en nuestro caso el mismo que hemos
+  usado hasta ahora.
+
+**NOTA SOBRE EL ARCHIVO .env DEL ms-config-server**
+
+> Solo es para mantener en mi pc el token. El application.properties del ms-config-server está leyendo el token, pero
+> desde IntelliJ IDEA o desde la cmd cuando ejecutamos el .jar agregándole la variable de entorno o desde el
+> mismo docker-compose.yml.
+
+### Ejecutando contenedores con docker-compose
+
+Nos ubicamos mediante cmd en la raíz de nuestro proyecto principal (microservices-project), ya que allí tenemos nuestro
+archivo **docker-compose.yml** y ejecutamos el siguiente comando:
+
+````
+docker compose up
+````
+
+Luego de ejecutar el comando anterior, veremos en la consola que nuestros contenedores se empezarán a levantar. Si no
+quisiéramos que se vieran los logs en la consola, al comando anterior agregarle la bandera **-d** (ques detached).

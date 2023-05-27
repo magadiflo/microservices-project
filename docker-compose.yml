@@ -1,0 +1,23 @@
+version: "3.9"
+services:
+  config-server:
+    container_name: config-server
+    image: config-server:v1.0.0
+    ports:
+      - "8888:8888"
+    env_file:
+      - ./infrastructure/ms-config-server/.env
+    restart: always
+    networks:
+      - ms-spring-cloud
+  eureka-server:
+    container_name: eureka-server
+    image: eureka-server:v1.0.0
+    ports:
+      - "8761:8761"
+    restart: always
+    networks:
+      - ms-spring-cloud
+networks:
+  ms-spring-cloud:
+    name: ms-spring-cloud
