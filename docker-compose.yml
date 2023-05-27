@@ -38,6 +38,33 @@ services:
       - config-server
       - eureka-server
       - ms-mysql8
+  ms-items:
+    container_name: ms-items
+    image: ms-items:v1.0.0
+    ports:
+      - "8002:8002"
+      - "8005:8005"
+      - "8007:8007"
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-productos
+  ms-zuul-server:
+    container_name: ms-zuul-server
+    image: ms-zuul-server:v1.0.0
+    ports:
+      - "8090:8090"
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-productos
+      - ms-items
 networks:
   ms-spring-cloud:
     name: ms-spring-cloud

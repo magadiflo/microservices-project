@@ -661,3 +661,55 @@ docker-compose up --scale ms-productos=3 -d
 - **--scale**, bandera que nos indica que escalaremos el contenedor.
 - **ms-productos=3**, indicamos el **nombre del servicio** y la cantidad de contenedores que quisiéramos tener.
 - **-d**, es el **detached** de toda la vida, para no ver el log en la consola y seguir ejecutando más comandos.
+
+---
+
+## Despliegue de ms-zuul-server e items con docker-compose
+
+Agregamos al archivo docker-compose.yml dos servicios más correspondientes para los contenedores de items y zuul server:
+
+````yml
+  ms-items:
+    container_name: ms-items
+    image: ms-items:v1.0.0
+    ports:
+      - "8002:8002"
+      - "8005:8005"
+      - "8007:8007"
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-productos
+  ms-zuul-server:
+    container_name: ms-zuul-server
+    image: ms-zuul-server:v1.0.0
+    ports:
+      - "8090:8090"
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-productos
+      - ms-items
+````
+
+Lo que se puede comentar del código anterior es las dependencias, es decir por ejemplo el servicio de **ms-zuul-server**
+depende de los servicios: **config-server, eureka-server, ms-productos y ms-items**, lo que significa que para poder
+levantar el servicio de **ms-zuul-server** con docker-compose, previamente tenemos que levantar los servicios ya
+descritos.
+
+Orden de ejecución de cada servicio usando docker-compose:
+
+````
+docker-compose up -d config-server
+docker-compose up -d eureka-server
+docker-compose up -d ms-mysql8
+docker-compose up -d ms-productos
+docker-compose up -d ms-items
+docker-compose up -d ms-zuul-server
+````
