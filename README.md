@@ -572,8 +572,92 @@ Nos ubicamos mediante cmd en la raíz de nuestro proyecto principal (microservic
 archivo **docker-compose.yml** y ejecutamos el siguiente comando:
 
 ````
-docker compose up
+docker-compose up
 ````
 
 Luego de ejecutar el comando anterior, veremos en la consola que nuestros contenedores se empezarán a levantar. Si no
 quisiéramos que se vieran los logs en la consola, al comando anterior agregarle la bandera **-d** (ques detached).
+---
+
+## Despliegue de servicios mysql y productos con docker compose
+
+En este apartado agregamos dos servicios adicionales en el **docker-compose.yml**: ms-mysql8 y ms-productos:
+
+````yml
+  ms-mysql8:
+    container_name: ms-mysql8
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: magadiflo
+      MYSQL_DATABASE: bd_spring_boot_cloud
+    restart: always
+    networks:
+      - ms-spring-cloud
+  ms-productos:
+    image: ms-productos:v1.0.0
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-mysql8
+````
+
+**NOTA 01:** En el servicio **ms-productos** agregamos los servicios de los que depende el ms-productos, es decir,
+para que el ms-productos se levante, necesita previamente que estén levantados los servicios que se muestran
+en ese orden: **config-server, eureka-server y ms-mysql8**.
+
+**NOTA 02:** En el servicio **ms-productos** no le agregamos el atributo **"container_name",** ya que si lo hacemos
+estaríamos dándole un nombre fijo al contenedor y como el contenedor que aloja al ms-productos podrá escalarse (por eso
+es que definimos el puerto en aleatorio) nos mostrará un error, porque docker requiere que cada contenedor tenga un
+nombre único. En resumen, no debemos colocarle el atributo **container_name**, docker automáticamente le asignará
+un nombre aleatorio por cada instancia que se escale.
+
+### Ejecutando docker compose para levantar los contenedores
+
+Antes de ejecutar docker-compose debemos eliminar todos los contenedores que tengamos en docker. Si hemos venido
+trabajando con docker-compose, solo es ejecutar el siguiente comando: ``docker-compose down``.
+
+Ahora sí empezamos a ejecutar nuestros contendores. Como vimos el servicio **ms-productos** depende del **config-server,
+eureka-server y ms-mysql8**, por lo tanto, iremos levantando en ese orden, servicio tras servicio:
+
+````
+docker-compose up -d config-server
+````
+
+````
+docker-compose up -d eureka-server
+````
+
+````
+docker-compose up -d ms-mysql8
+````
+
+Finalmente nuestro contenedor cuyo nombre del servicio es: ms-productos
+
+````
+docker-compose up -d ms-productos
+````
+
+Verificamos en la web de eureka server que esté la instancia de nuestro servicio productos.
+
+### Escalando contenedor de ms-productos
+
+Como vimos en el apartado anterior, al servicio **ms-productos** no le agregamos un **container_name** explícitamente,
+sino que dejamos que docker le asigne uno aleatoriamente y eso es porque precisamente este **ms-productos** está
+pensado para poder ser **escalado**.
+
+Para poder escalar el número de instancias o contenedores que quisiéramos, ejecutamos el siguiente comando:
+
+````
+docker-compose up --scale ms-productos=3 -d
+````
+
+**DONDE:**
+
+- **--scale**, bandera que nos indica que escalaremos el contenedor.
+- **ms-productos=3**, indicamos el **nombre del servicio** y la cantidad de contenedores que quisiéramos tener.
+- **-d**, es el **detached** de toda la vida, para no ver el log en la consola y seguir ejecutando más comandos.

@@ -18,6 +18,26 @@ services:
     restart: always
     networks:
       - ms-spring-cloud
+  ms-mysql8:
+    container_name: ms-mysql8
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: magadiflo
+      MYSQL_DATABASE: bd_spring_boot_cloud
+    restart: always
+    networks:
+      - ms-spring-cloud
+  ms-productos:
+    image: ms-productos:v1.0.0
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-mysql8
 networks:
   ms-spring-cloud:
     name: ms-spring-cloud
