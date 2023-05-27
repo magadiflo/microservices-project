@@ -1143,5 +1143,5 @@ Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes cont
 Ahora, a partir de la imagen anterior, crearemos nuestro contenedor:
 
 ````
-docker container run -p 9100:9100 --network ms-spring-cloud authorization-server:v1.0.
+docker container run -p 9100:9100 --network ms-spring-cloud authorization-server:v1.0.0
 ````

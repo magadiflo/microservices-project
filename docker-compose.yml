@@ -29,6 +29,17 @@ services:
     restart: always
     networks:
       - ms-spring-cloud
+  ms-postgres12:
+    container_name: ms-postgres12
+    image: postgres:12-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: magadiflo
+      POSTGRES_DB: bd_spring_boot_cloud
+    restart: always
+    networks:
+      - ms-spring-cloud
   ms-productos:
     image: ms-productos:v1.0.0
     restart: always
@@ -52,6 +63,27 @@ services:
       - config-server
       - eureka-server
       - ms-productos
+  ms-usuarios:
+    image: ms-usuarios:v1.0.0
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-postgres12
+  authorization-server:
+    container_name: authorization-server
+    image: authorization-server:v1.0.0
+    ports:
+      - "9100:9100"
+    restart: always
+    networks:
+      - ms-spring-cloud
+    depends_on:
+      - config-server
+      - eureka-server
+      - ms-usuarios
   ms-zuul-server:
     container_name: ms-zuul-server
     image: ms-zuul-server:v1.0.0
