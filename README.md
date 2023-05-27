@@ -713,3 +713,26 @@ docker-compose up -d ms-productos
 docker-compose up -d ms-items
 docker-compose up -d ms-zuul-server
 ````
+
+---
+
+## Levantando todos los contenedores con un solo comando de docker-compose
+
+Como en el archivo **docker-compose.yml** ya tenemos configurado cada servicio para la construcción de su
+correspondiente contenedor, incluso definimos el atributo **depends_on** para definir los servicios
+de las cuales depende otro servicio y además el atributo **restart: always** para que siempre se reinicie,
+por ejemplo cuando ocurra algún error. Entonces bajo esas consideraciones es solo es necesario ejecutar
+el comando siguiente:
+
+````
+docker-compose up -d
+````
+
+En automático se procederá con la construcción de los contenedores. Ahora, si por ejemplo, el **ms-productos**
+se inicia antes que el **ms-mysql8**, ocurrirá un error en el **ms-productos**, puesto que necesita del **ms-mysql8**
+para poder crear las tablas e insertar los registros de productos, entonces lo que hará será reiniciarse tantas veces
+como sea posible hasta que el **ms-mysql8** se haya levantado y pueda conectarse a él correctamente, ahí tenemos la
+razón del **restart: always**. Ahora, la única diferencia
+sería que ``debemos esperar un tiempo hasta que todos se hayan levantado correctamente.``, mientras que ejecutando
+el docker-compose up, servicio tras servicio, en forma ordenada, sería algo más rápido aunque tedioso porque hay que
+estar ejecutando comando tras comando.
