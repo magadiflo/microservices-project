@@ -19,10 +19,11 @@ funcionalidad básica de CRUD para aplicaciones web sea bastante simple.
 
 Agregamos la dependencia de Spring Data Rest al pom.xml:
 
-````
+````xml
+
 <dependency>
-  <groupId>org.springframework.boot</groupId>
-  <artifactId>spring-boot-starter-data-rest</artifactId>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-rest</artifactId>
 </dependency>
 ````
 
@@ -34,7 +35,8 @@ Agregamos la dependencia de Spring Data Rest al pom.xml:
 
 Nuestra interfaz quedaría de la siguiente forma:
 
-````
+````java
+
 @RepositoryRestResource(path = "usuarios")
 public interface IUsuarioRepository extends PagingAndSortingRepository<Usuario, Long> {
     Optional<Usuario> findByUsername(String username);
@@ -61,10 +63,10 @@ public interface IUsuarioRepository extends PagingAndSortingRepository<Usuario, 
 Como definimos el puerto en aleatorio para este ms-usuarios, accederemos a sus endpoints vía Spring Cloud Gateway,
 por lo que, previamente configuraremos en el ms-spring-cloud-gateway el redireccionamiento a este ms-usuarios.
 
-Para acceder a la lista de usuarios, sería a través de la siguiente url:
+Para acceder a la lista de usuarios, sería a través de la siguiente url `[GET]`:
 
-````
-[GET] http://127.0.0.1:8090/api-base/usuarios-base/usuarios
+````bash
+$ http://127.0.0.1:8090/api-base/usuarios-base/usuarios
 ````
 
 **Donde:**
@@ -75,63 +77,63 @@ Para acceder a la lista de usuarios, sería a través de la siguiente url:
 
 Como resultado obtendremos el siguiente JSON:
 
-````
+````json
 {
-    "_embedded": {
-        "usuarios": [
-            {
-                "username": "martin",
-                "password": "12345",
-                "enabled": true,
-                "nombre": "Martín",
-                "apellido": "Díaz",
-                "email": "martin@magadiflo.com",
-                "roles": [],
-                "_links": {
-                    "self": {
-                        "href": "http://host.docker.internal:54277/usuarios/1"
-                    },
-                    "usuario": {
-                        "href": "http://host.docker.internal:54277/usuarios/1"
-                    }
-                }
-            },
-            {
-                "username": "admin",
-                "password": "12345",
-                "enabled": true,
-                "nombre": "Admin",
-                "apellido": "Admin",
-                "email": "admin@magadiflo.com",
-                "roles": [],
-                "_links": {
-                    "self": {
-                        "href": "http://host.docker.internal:54277/usuarios/2"
-                    },
-                    "usuario": {
-                        "href": "http://host.docker.internal:54277/usuarios/2"
-                    }
-                }
-            }
-        ]
-    },
-    "_links": {
-        "self": {
-            "href": "http://host.docker.internal:54277/usuarios"
-        },
-        "profile": {
-            "href": "http://host.docker.internal:54277/profile/usuarios"
-        },
-        "search": {
-            "href": "http://host.docker.internal:54277/usuarios/search"
+  "_embedded": {
+    "usuarios": [
+      {
+        "username": "martin",
+        "password": "12345",
+        "enabled": true,
+        "nombre": "Martín",
+        "apellido": "Díaz",
+        "email": "martin@magadiflo.com",
+        "roles": [],
+        "_links": {
+          "self": {
+            "href": "http://host.docker.internal:54277/usuarios/1"
+          },
+          "usuario": {
+            "href": "http://host.docker.internal:54277/usuarios/1"
+          }
         }
+      },
+      {
+        "username": "admin",
+        "password": "12345",
+        "enabled": true,
+        "nombre": "Admin",
+        "apellido": "Admin",
+        "email": "admin@magadiflo.com",
+        "roles": [],
+        "_links": {
+          "self": {
+            "href": "http://host.docker.internal:54277/usuarios/2"
+          },
+          "usuario": {
+            "href": "http://host.docker.internal:54277/usuarios/2"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://host.docker.internal:54277/usuarios"
     },
-    "page": {
-        "size": 20,
-        "totalElements": 2,
-        "totalPages": 1,
-        "number": 0
+    "profile": {
+      "href": "http://host.docker.internal:54277/profile/usuarios"
+    },
+    "search": {
+      "href": "http://host.docker.internal:54277/usuarios/search"
     }
+  },
+  "page": {
+    "size": 20,
+    "totalElements": 2,
+    "totalPages": 1,
+    "number": 0
+  }
 }
 ````
 
@@ -144,59 +146,61 @@ en forma de hipervínculos y otros recursos del api que le indica al cliente **�
 
 ## Registrando un nuevo usuario
 
-````
-[POST] http://127.0.0.1:8090/api-base/usuarios-base/usuarios
+Usamos la siguiente dirección con el método `[POST]`:
+
+````bash
+$ http://127.0.0.1:8090/api-base/usuarios-base/usuarios
 ````
 
 Request Body:
 
-````
+````json
 {
-    "username": "gaspar",
-    "password": "12345",
-    "enabled": true,
-    "nombre": "Gaspar",
-    "apellido": "Torres",
-    "email": "gaspar@magadiflo.com",
-    "roles": [
-        {
-            "id": 1,
-            "nombre": "ROLE_USER"
-        },
-        {
-            "id": 2,
-            "nombre": "ROLE_ADMIN"
-        }
-    ]
+  "username": "gaspar",
+  "password": "12345",
+  "enabled": true,
+  "nombre": "Gaspar",
+  "apellido": "Torres",
+  "email": "gaspar@magadiflo.com",
+  "roles": [
+    {
+      "id": 1,
+      "nombre": "ROLE_USER"
+    },
+    {
+      "id": 2,
+      "nombre": "ROLE_ADMIN"
+    }
+  ]
 }
 ````
 
 Response Body:
 
-````
+````json
 {
-    "username": "gaspar",
-    "password": "12345",
-    "enabled": true,
-    "nombre": "Gaspar",
-    "apellido": "Torres",
-    "email": "gaspar@magadiflo.com",
-    "roles": [
-        {
-            "nombre": "ROLE_USER"
-        },
-        {
-            "nombre": "ROLE_ADMIN"
-        }
-    ],
-    "_links": {
-        "self": {
-            "href": "http://host.docker.internal:55184/usuarios/3"
-        },
-        "usuario": {
-            "href": "http://host.docker.internal:55184/usuarios/3"
-        }
+  "username": "gaspar",
+  "password": "12345",
+  "enabled": true,
+  "nombre": "Gaspar",
+  "apellido": "Torres",
+  "email": "gaspar@magadiflo.com",
+  "roles": [
+    {
+      "nombre": "ROLE_USER"
+    },
+    {
+      "nombre": "ROLE_ADMIN"
     }
+  ],
+  "_links": {
+    "self": {
+      "href": "http://host.docker.internal:55184/usuarios/3"
+    },
+    "usuario": {
+      "href": "http://host.docker.internal:55184/usuarios/3"
+    }
+  }
 }
 ````
 
@@ -210,8 +214,8 @@ Para poder acceder a ellos, tal como accedemos a los endPoints del CRUD de dicho
 hacerlo usando en la url el **/search** seguido del nombre del método y agregando params si es que el
 método lo requiere:
 
-````
-http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/findByUsername?username=magadiflo
+````bash
+$ http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/findByUsername?username=magadiflo
 ````
 
 **Donde**
@@ -227,13 +231,17 @@ el nombre del método por defecto. Para eso debemos agregarle la anotación **@R
 definiéndole el nombre por el cual accederemos, además podemos darle un nombre distinto
 al parámetro con **@Param**:
 
-````
-@RestResource(path = "buscar-usuario")
-Optional<Usuario> findByUsername(@Param(value = "usuario") String username);
+````java
+
+@RepositoryRestResource(path = "usuarios")
+public interface IUsuarioRepository extends PagingAndSortingRepository<Usuario, Long> {
+    @RestResource(path = "buscar-usuario")
+    Optional<Usuario> findByUsername(@Param(value = "usuario") String username);
+}
 ````
 
-````
-http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/buscar-usuario?usuario=martin
+````bash
+$ http://127.0.0.1:8090/api-base/usuarios-base/usuarios/search/buscar-usuario?usuario=martin
 ````
 
 ## Configurar y exponer id en la respuesta json
@@ -244,7 +252,8 @@ que es una interfaz que permite agregar configuraciones a todo lo relacionado co
 Sobre escribir el método para indicarle qué clases queremos que muestren sus ids, en nuestro caso
 le decimos que tanto la clase Usuario como Rol.
 
-````
+````java
+
 @Configuration
 public class RepositoryConfig implements RepositoryRestConfigurer {
     @Override
@@ -276,7 +285,8 @@ librería ms-commons.
 En mi caso ya tengo instalado PostgreSQL, solo creé una base de datos llamada: bd_spring_boot_cloud.
 Ahora, en el **ms-usuarios** es importante agregar el driver de conexión de postgresql:
 
-````
+````xml
+
 <dependency>
     <groupId>org.postgresql</groupId>
     <artifactId>postgresql</artifactId>
@@ -293,30 +303,27 @@ de development: **ms-usuarios-development.properties**.
 
 A dicho archivo le agregaremos las configuraciones para conectarnos a PostgreSQL, etc.
 
-````
+````properties
 # Datasource POSTGRESQL
 spring.datasource.url=jdbc:postgresql://localhost:5432/bd_spring_boot_cloud
 spring.datasource.username=postgres
 spring.datasource.password=magadiflo
 spring.datasource.driver-class-name=org.postgresql.Driver
-
 # Configurando dialecto de POSTGRESQL
 spring.jpa.database-platform=org.hibernate.dialect.PostgreSQL95Dialect
-
 # Generando tablas: create, crea el esquema y destruye cualquier dato previo
 spring.jpa.hibernate.ddl-auto=create
-
 # Vista y formato en el log
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
-
 # Para evitar que lance un error (no es grave, pero sí molesto) cuando se corre postgresql con spring boot
 spring.jpa.properties.hibernate.jdbc.lob.non_contextual_creation=true
 ````
 
 En el ms-usuarios, agregamos la dependencia de Spring Config:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-config</artifactId>
@@ -326,7 +333,7 @@ En el ms-usuarios, agregamos la dependencia de Spring Config:
 En el application.properties de este microservicio agregamos la configuración para conectarnos al servidor de
 configuraciones:
 
-````
+````properties
 # Configurando conexion a servidor de configuraciones
 spring.config.import=optional:configserver:http://localhost:8888
 spring.profiles.active=development
@@ -354,28 +361,28 @@ Ahora, como nuestro **ms-usuarios** está usando la librería que creamos **ms-u
 dentro del repositorio local de maven. Para eso nos posicionamos mediante cmd en la raíz de nuestra librería
 **ms-usuarios-commons** y ejecutamos:
 
-````
-mvnw.cmd clean install
+````bash
+$ mvnw.cmd clean install
 ````
 
 Como siguiente paso, es crear nuestro .jar de nuestro ms-usuarios, para eso nos posicionamos en la raíz de dicho
 microservicio, ejecutamos:
 
-````
-mvnw.cmd clean package -DskipTests
+````bash
+$ mvnw.cmd clean package -DskipTests
 ````
 
 Con nuestro .jar construido y con el Dockerfile configurado, es momento de crear nuestra imagen ejecutando el
 siguiente comando:
 
-````
-docker build -t ms-usuarios:v1.0.0 .
+````bash
+$ docker build -t ms-usuarios:v1.0.0 .
 ````
 
 Listamos las imágenes para ver que ya tengamos el nuestro:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Resultado ---
 REPOSITORY       TAG         IMAGE ID       CREATED              SIZE
@@ -396,8 +403,8 @@ Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes cont
 
 a partir de la imagen anterior, crearemos nuestro contenedor:
 
-````
-docker container run -P --network ms-spring-cloud ms-usuarios:v1.0.0
+````bash
+$ docker container run -P --network ms-spring-cloud ms-usuarios:v1.0.0
 ````
 
 **NOTA**

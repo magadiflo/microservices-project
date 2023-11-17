@@ -141,7 +141,7 @@ public ResponseEntity<Producto> verProducto(@PathVariable Long id) {
 - Como hystrix envuelve a ribbon, lo ideal es que hystrix tenga un tiempo de timeout superior a ribbon.
 - Por lo tanto, en la siguiente configuración hystrix = 20000, Ribbon = 3000 + 10000 => hystrix (20000) > ribbon (13000)
 
-````
+````properties
 hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 20000
 ribbon.ConnectTimeout: 3000
 ribbon.ReadTimeout: 10000

@@ -8,7 +8,7 @@ Para definir este microservicio como un servidor de configuraciones debemos anot
 
 En el application.properties agregamos la configuración del **Repositorio Local**
 
-````
+````properties
 spring.cloud.config.server.git.uri=file:///M:/PROGRAMACION/DESARROLLO_JAVA_SPRING/INTELLIJ_IDEA/01.udemy/02.udemy_andres_guzman/04.repaso/config-server-repo
 ````
 
@@ -76,7 +76,7 @@ Creamos un proyecto en GitHub para subir nuestras configuraciones. Enlazamos nue
 
 En el application.properties agregamos la configuración con la url de nuestro repositorio remoto:
 
-````
+````properties
 spring.cloud.config.server.git.uri=https://github.com/magadiflo/config-server-repo.git
 ````
 
@@ -92,11 +92,10 @@ microservicio que requiera dichas configuraciones.
 Creamos el archivo **application.properties** con las siguientes configuraciones personalizadas,
 las guardamos y pusheamos al repositorio remoto:
 
-````
+````properties
 # Para autenticarnos para generar el token (credenciales de la App Client)
 config.security.oauth.client.id=frontendApp
 config.security.oauth.client.secret=frontendApp-12345
-
 # llave para firmar el token
 config.security.oauth.jwt.key=mi-clave-secreta-12345
 ````
@@ -138,7 +137,7 @@ Access Token** más el nombre del usuario para que esa funcionalidad pueda darse
 
 Agregaremos la siguiente configuración en el **application.properties**:
 
-````
+````properties
 spring.cloud.config.server.git.username=magadiflo
 spring.cloud.config.server.git.password=${REPO_CONFIG_PASS}
 ````
@@ -168,8 +167,8 @@ REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
 2. **Usando cmd**, para poder ejecutar un jar conteniendo la aplicación de **ms-config-server**. Teniendo el .jar
    generado, procedemos a ejecutarlo agregando en la misma línea la variable de ambiente:
 
-````
-java -jar .\target\ms-config-server-0.0.1-SNAPSHOT.jar --REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
+````bash
+$ java -jar .\target\ms-config-server-0.0.1-SNAPSHOT.jar --REPO_CONFIG_PASS=ghp_0aVwJa7FWLS2HIaAPGwhr.........
 ````
 
 ---
@@ -184,8 +183,8 @@ Para poder generar nuestra imagen de nuestro **ms-config-server**, es necesario 
 ya que será usado dentro del **Dockerfile**. Para generar el **.jar**, vamos a la raíz de ese microservicio y
 ejecutamos:
 
-````
-mvnw.cmd clean package
+````bash
+$ mvnw.cmd clean package
 ````
 
 Terminada la construcción de nuestro .jar, se creará una carpeta **/target** conteniéndolo:
@@ -232,8 +231,8 @@ ENTRYPOINT ["java", "-jar", "/config-server.jar"]
 Mediante el cmd nos posicionamos en la **raíz del ms-config-server**. En esa raíz debemos tener el Dockerfile trabajado
 anteriormente. Ahora ejecutamos el siguiente comando:
 
-````
-docker build -t config-server:v1.0.0 .
+````bash
+$ docker build -t config-server:v1.0.0 .
 ````
 
 **DONDE**:
@@ -248,8 +247,8 @@ docker build -t config-server:v1.0.0 .
 
 Finalizado la construcción ejecutamos el siguiente comando para verificar que efectivamente sí se ha construido:
 
-````
-docker image ls
+````bash
+$ docker image ls
 ````
 
 Resultado:
@@ -262,8 +261,8 @@ config-server   v1.0.0    36bca5b29011   9 minutes ago   362MB
 Creamos una red llamada **ms-spring-cloud** donde agregaremos a todos nuestros microservicios, de tal forma que
 puedan comunicarse entre sí, puesto que estarán en la misma red:
 
-````
- docker network create ms-spring-cloud
+````bash
+ $ docker network create ms-spring-cloud
 ````
 
 ### Creando un contenedor a partir de nuestra imagen dockerizada
@@ -271,8 +270,8 @@ puedan comunicarse entre sí, puesto que estarán en la misma red:
 Una vez dockerizada nuestro contenedor y teniendo la red a donde nos conectaremos, ejecutaremos el siguiente comando
 para poder construir nuestro primer contenedor:
 
-````
-docker container run -p 8888:8888 --name config-server --network ms-spring-cloud -e REPO_CONFIG_PASS=ghp_mdNs6eo0jlO757... config-server:v1.0.0
+````bash
+$ docker container run -p 8888:8888 --name config-server --network ms-spring-cloud -e REPO_CONFIG_PASS=ghp_mdNs6eo0jlO757... config-server:v1.0.0
 ````
 
 **DONDE**:
@@ -302,8 +301,8 @@ docker container run -p 8888:8888 --name config-server --network ms-spring-cloud
   se ejecutó el comando.
 - Si queremos listar nuestro contendor en docker ejecutamos:
 
-````
-docker container ls -a
+````bash
+$ docker container ls -a
 
 ---Resultado---                                                                                                           
 CONTAINER ID   IMAGE                  COMMAND                  CREATED          STATUS          PORTS                    NAMES        
@@ -318,32 +317,32 @@ http://localhost:8888/ms-items/default
 
 Resultado:
 
-````
+````json
 {
-    "name": "ms-items",
-    "profiles": [
-        "default"
-    ],
-    "label": null,
-    "version": "5dbf46accb0c710fc039592b4c42b396a2c46ddb",
-    "state": null,
-    "propertySources": [
-        {
-            "name": "https://github.com/magadiflo/config-server-repo.git/ms-items.properties",
-            "source": {
-                "server.port": "8005",
-                "configuracion.texto": "ConfiguraciÃ³n personalizada para el ambiente POR DEFECTO"
-            }
-        },
-        {
-            "name": "https://github.com/magadiflo/config-server-repo.git/application.properties",
-            "source": {
-                "config.security.oauth.client.id": "frontendApp",
-                "config.security.oauth.client.secret": "frontendApp-12345",
-                "config.security.oauth.jwt.key": "mi-clave-secreta-12345"
-            }
-        }
-    ]
+  "name": "ms-items",
+  "profiles": [
+    "default"
+  ],
+  "label": null,
+  "version": "5dbf46accb0c710fc039592b4c42b396a2c46ddb",
+  "state": null,
+  "propertySources": [
+    {
+      "name": "https://github.com/magadiflo/config-server-repo.git/ms-items.properties",
+      "source": {
+        "server.port": "8005",
+        "configuracion.texto": "ConfiguraciÃ³n personalizada para el ambiente POR DEFECTO"
+      }
+    },
+    {
+      "name": "https://github.com/magadiflo/config-server-repo.git/application.properties",
+      "source": {
+        "config.security.oauth.client.id": "frontendApp",
+        "config.security.oauth.client.secret": "frontendApp-12345",
+        "config.security.oauth.jwt.key": "mi-clave-secreta-12345"
+      }
+    }
+  ]
 }
 ````
 

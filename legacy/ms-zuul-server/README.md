@@ -21,10 +21,9 @@ En el archivo application.properties agregamos las rutas base, donde:
 - **Ruta base**: /api-base/productos-base/
 - **, indica las rutas propias del microservicio
 
-````
+````properties
 zuul.routes.productos.service-id=ms-productos
 zuul.routes.productos.path=/api-base/productos-base/**
-
 zuul.routes.items.service-id=ms-items
 zuul.routes.items.path=/api-base/items-base/**
 ````
@@ -41,10 +40,10 @@ zuul.routes.items.path=/api-base/items-base/**
   dado por Hystrix.
 - Para solucionar el problema debemos modificar el timeout el application.properties de zuul:
 
-````
-hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 20000
-ribbon.ConnectTimeout: 3000
-ribbon.ReadTimeout: 10000
+````properties
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds:20000
+ribbon.ConnectTimeout:3000
+ribbon.ReadTimeout:10000
 ````
 
 - Como resultado de esa configuración (ampliación del timeout), zuul permitirá mostrar el
@@ -58,10 +57,10 @@ ribbon.ReadTimeout: 10000
   items. Entonces, para que no ocurra un timeOut en nuestro ms-items, necesitamos que
   su archivo de propiedades, también esté configurada con:
 
-````
-hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds: 20000
-ribbon.ConnectTimeout: 3000
-ribbon.ReadTimeout: 10000
+````properties
+hystrix.command.default.execution.isolation.thread.timeoutInMilliseconds:20000
+ribbon.ConnectTimeout:3000
+ribbon.ReadTimeout:10000
 ````
 
 - De la misma manera, el application.properties de zuul server debe tener las configuraciones
@@ -79,10 +78,9 @@ ribbon.ReadTimeout: 10000
 En el **application.properties** agregamos las rutas base que redireccionarán a
 los nuevos microservicios creados:
 
-````
+````properties
 zuul.routes.usuarios.service-id=ms-usuarios
 zuul.routes.usuarios.path=/api-base/usuarios-base/**
-
 zuul.routes.security.service-id=ms-authorization-server
 zuul.routes.security.path=/api-base/authorization-server-base/**
 zuul.routes.security.sensitive-headers=Cookie,Set-Cookie
@@ -113,21 +111,24 @@ programación reactiva)
 
 Agregamos las siguientes dependencias que son las mismas que usamos en el **ms-authorization-server**:
 
-````
-<dependency>
-    <groupId>org.springframework.security.oauth</groupId>
-    <artifactId>spring-security-oauth2</artifactId>
-    <version>2.3.8.RELEASE</version>
-</dependency>
-<dependency>
-    <groupId>org.springframework.security</groupId>
-    <artifactId>spring-security-jwt</artifactId>
-    <version>1.1.1.RELEASE</version>
-</dependency>
-<dependency>
-    <groupId>org.glassfish.jaxb</groupId>
-    <artifactId>jaxb-runtime</artifactId>
-</dependency>
+````xml
+
+<project>
+    <dependency>
+        <groupId>org.springframework.security.oauth</groupId>
+        <artifactId>spring-security-oauth2</artifactId>
+        <version>2.3.8.RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-jwt</artifactId>
+        <version>1.1.1.RELEASE</version>
+    </dependency>
+    <dependency>
+        <groupId>org.glassfish.jaxb</groupId>
+        <artifactId>jaxb-runtime</artifactId>
+    </dependency>
+</project>
 ````
 
 ### Creando la clase de configuración del servidor de recurso
@@ -200,7 +201,8 @@ usará una aplicación cliente, así como la clave para firmar el token.
 Entonces, necesitamos que nuestro servidor ms-zuul-server se comunique con el servidor de configuraciones
 para obtener dichas configuraciones. Agregamos la dependencia de config client:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-config</artifactId>
@@ -268,7 +270,8 @@ Así que crearé una clase llamada **CorsConfig** dentro de un paquete **/config
 
 El primer bean a crear será el siguiente:
 
-````
+````java
+
 @Configuration
 public class CorsConfig {
 
@@ -285,7 +288,7 @@ public class CorsConfig {
 
         return source;
     }
-    
+
     /* más código */
 }
 ````
@@ -326,19 +329,20 @@ a toda nuestra aplicación en general.
 En nuestra clase de configuración del servidor de recurso (ResourceServerConfig) aplicamos inyección de dependencia
 vía constructor, del bean que creamos en nuestra clase CorsConfig.
 
-````
+````java
+
 @RefreshScope
 @EnableResourceServer
 @Configuration
 public class ResourceServerConfig extends ResourceServerConfigurerAdapter {
-    
+
     /* más código */
     private final CorsConfigurationSource corsConfigurationSource;
 
     public ResourceServerConfig(CorsConfigurationSource corsConfigurationSource) {
         this.corsConfigurationSource = corsConfigurationSource;
     }
-    
+
     /* más código */
 }
 ````
@@ -394,8 +398,8 @@ ENTRYPOINT ["java", "-jar", "/zuul-server.jar"]
 
 Ahora, posicionados mediante cmd en la raíz de este microservicio generaremos el .jar para poder crear la imagen:
 
-````
-mvnw.cmd clean package -DskipTests
+````bash
+$ mvnw.cmd clean package -DskipTests
 ````
 
 Al igual que hicimos con el ms-productos para poder generar su .jar, necesitamos agregar la bandera **-DskipTests**
@@ -404,14 +408,14 @@ con eureka server y lanzará error, porque esos servicios no están ejecutándos
 
 Ahora que ya tenemos el **.jar**, es momento de crear la imagen, siempre mediante cmd en la raíz de este microservicio:
 
-````
-docker build -t ms-zuul-server:v1.0.0 .
+````bash
+$ docker build -t ms-zuul-server:v1.0.0 .
 ````
 
 Verificamos que se haya creado la imagen:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Resultado ---
 REPOSITORY       TAG         IMAGE ID       CREATED          SIZE
@@ -429,8 +433,8 @@ postgres         12-alpine   945704f99920   6 days ago       230MB
 
 Finalmente, ejecutamos un contenedor a partir de nuestra imagen de zuul server:
 
-````
-docker container run -p 8090:8090 --network ms-spring-cloud ms-zuul-server:v1.0.0
+````bash
+$ docker container run -p 8090:8090 --network ms-spring-cloud ms-zuul-server:v1.0.0
 ````
 
 Podemos verificar a través de eureka que nuestro microservicio ms-eureka-server esté registrado:

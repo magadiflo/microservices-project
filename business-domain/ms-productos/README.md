@@ -63,7 +63,7 @@ Al usar Spring Cloud, puede anular el valor de la instancia única proporcionada
 al proporcionar un identificador único en **eureka.instance.instanceId**, como lo hicimos en el archivo
 de propiedades:
 
-````
+````properties
 eureka.instance.instance-id=${spring.application.name}:${spring.application.instance_id:${random.value}}
 ````
 
@@ -83,7 +83,8 @@ creamos un proyecto de librería (ms-commons). Nuestro ms-productos necesita un 
 Para usar la Entity Producto de la librería ms-commons, necesitamos agregar en el pom.xml de este
 microservicio, su dependencia:
 
-````
+````xml
+
 <dependency>
     <groupId>com.magadiflo.msp.shared.library</groupId>
     <artifactId>ms-commons</artifactId>
@@ -108,7 +109,8 @@ pero en un **CONTEXTO DE PERSISTENCIA**.
 
 Nuestra clase principal quedaría así:
 
-````
+````java
+
 @EnableEurekaClient
 @SpringBootApplication
 @EntityScan(basePackages = {"com.magadiflo.msp.shared.library.commons.app.models.entity"})
@@ -137,7 +139,8 @@ por defecto, usará esta última base de datos.
 
 Agregamos en el **pomx.xml**, la dependencia del Driver de MySQL:
 
-````
+````xml
+
 <dependency>
     <groupId>com.mysql</groupId>
     <artifactId>mysql-connector-j</artifactId>
@@ -147,19 +150,16 @@ Agregamos en el **pomx.xml**, la dependencia del Driver de MySQL:
 
 Agregamos configuraciones de Jpa y conexión a MySQL y al **application.properties**:
 
-````
+````properties
 # Datasource MySQL
 spring.datasource.url=jdbc:mysql://localhost:3306/bd_spring_boot_cloud?serverTimezone=America/Lima
 spring.datasource.username=root
 spring.datasource.password=magadiflo
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
-
 # Configurando dialecto de MySQL
 spring.jpa.database-platform=org.hibernate.dialect.MySQL8Dialect
-
 # Generando tablas: create, crea el esquema y destruye cualquier dato previo
 spring.jpa.hibernate.ddl-auto=create
-
 # Vista y formato en el log
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
@@ -188,7 +188,8 @@ tanto el **ms-items** como el **ms-productos**.
 A continuación se muestra la dependencia usada para que el ms-productos se comunique con Spring Config, pero
 ``recordar que dicha dependencia ya la tiene nuestro ms-productos, pues la está heredando del módulo business-domain``:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-config</artifactId>
@@ -201,7 +202,7 @@ requería que se le agregue dicha configuración.
 
 Ahora, en este punto del curso se agregan la configuración que ya teníamos anteriormente más el perfil seleccionado:
 
-````
+````properties
 # Configurando url al servidor de configuraciones
 spring.config.import=optional:configserver:http://localhost:8888
 spring.profiles.active=development
@@ -269,14 +270,14 @@ mvnw.cmd clean package -DskipTests
 
 Debemos estar ubicados en la raíz de este microservicio con el cmd y ejecutar el siguiente comando:
 
-````
-docker build -t ms-productos:v1.0.0 .
+````bash
+$ docker build -t ms-productos:v1.0.0 .
 ````
 
 Finalizado la construcción, verificamos si ya tenemos la imagen en docker:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Resultado ---
 REPOSITORY      TAG         IMAGE ID       CREATED              SIZE
@@ -294,14 +295,14 @@ config-server** estén ejecutándose, en caso estén detenidos iniciarlos con el
 
 Por ejemplo, iniciando el contenedor ms-mysql8 que está detenido:
 
-````
-docker start ms-mysql8
+````bash
+$ docker start ms-mysql8
 ````
 
 Ahora sí podemos ejecutar el siguiente comando:
 
-````
-docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
+````bash
+$ docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
 ````
 
 **DONDE:**
@@ -343,8 +344,8 @@ Como observamos en la secuencia anterior, podemos levantar **n cantidades** de c
 quisiéramos, para eso simplemente por cada nueva instancia o contenedor requerida, ejecutamos el siguiente comando
 para construir un nuevo contenedor **a partir de la misma imagen** del ms-productos:
 
-````
-docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
+````bash
+$ docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
 ````
 
 **DONDE**
@@ -354,8 +355,8 @@ docker container run -P --network ms-spring-cloud ms-productos:v1.0.0
 Nosotros crearemos dos contenedores más para tener 3 contenedores en total para el ms-productos. Finalmente, para poder
 ver los contenedores ejecutándose, los listamos:
 
-````
-docker container ls
+````bash
+$ docker container ls
 
 --- Resultado ---
 CONTAINER ID   IMAGE                   COMMAND                  CREATED          STATUS          PORTS                                                                    NAMES

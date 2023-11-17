@@ -46,28 +46,31 @@ Con este error nos topamos, casi al finalizar el curso, en la sección de Docker
 > de **/legacy**, es decir que el pom.xml de cada librería debe apuntar a spring-boot-starter-parent, tener su
 > properties con la versión de java y la dependencia de test.
 
-````
-# Por ejemplo: ms-commons
--------------------------
-<parent>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-parent</artifactId>
-    <version>2.7.11</version>
-    <relativePath/> <!-- lookup parent from repository -->
-</parent>
+**Por ejemplo: ms-commons**
 
-<properties>
-  <java.version>17</java.version>
-  <spring-cloud.version>2021.0.6</spring-cloud.version>
-</properties>
+````xml
 
-<dependencies>
-  <dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-test</artifactId>
-    <scope>test</scope>
-  </dependency>
-</dependencies>
+<project>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>2.7.11</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+
+    <properties>
+        <java.version>17</java.version>
+        <spring-cloud.version>2021.0.6</spring-cloud.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+</project>
 ````
 
 **CONCLUSIÓN**, colocar el proyecto tal cual se descarga de spring initializr dentro del
@@ -76,9 +79,7 @@ tampoco heredará de /microservices-project.**
 
 ---
 
-## Repositorio Remoto donde se subieron los archivos de configuración
-
-[config-server-repo](https://github.com/magadiflo/config-server-repo/tree/main)
+## [Aquí: Repositorio Remoto donde se subieron los archivos de configuración](https://github.com/magadiflo/config-server-repo/tree/main)
 
 ---
 
@@ -129,7 +130,8 @@ En el pom.xml de los siguientes microservicios agregaremos la dependencia de Sle
 - ms-authorization-server
 - ms-zuul-server
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-sleuth</artifactId>
@@ -140,7 +142,7 @@ En el pom.xml de los siguientes microservicios agregaremos la dependencia de Sle
 
 Realizaremos una petición para poder generar un token con los siguientes parámetros:
 
-````
+````bash
 [POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
 Authorization: 
 	Basic Auth: 
@@ -168,7 +170,7 @@ Obtenemos resultado
 
 Revisando trazabilidad generada en cada microservicio:
 
-````
+````bash
 ZuulServer:  		  [ms-zuul-server,5ca3f78663de87f7,5ca3f78663de87f7,true] 
 AuthorizationServer:      [ms-authorization-server,5ca3f78663de87f7,4ce49f0286041be7]
 MsUsuarios: 		  [ms-usuarios,5ca3f78663de87f7,51146e1683ec9003]
@@ -203,8 +205,8 @@ https://zipkin.io/pages/quickstart.html
 
 Ejecutamos el **.jar** descargado desde el cmd:
 
-````
-java -jar zipkin-server-2.24.1-exec.jar
+````bash
+$ java -jar zipkin-server-2.24.1-exec.jar
 ````
 
 Una vez que esté corriendo el programa, podemos acceder a su interfaz gráfica:
@@ -221,7 +223,8 @@ Al igual que hicimos con la dependencia de **Sleuth**, igualmente haremos con la
 lo agregaremos en cada uno de los microservicios. Agregaremos la siguiente dependencia proporcionada por
 spring initializr a los 5 microservicios con los que estamos trabajando, incluidos el ms-zuul-server.
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-sleuth-zipkin</artifactId>
@@ -245,10 +248,9 @@ sean exportados todas 100%.
 Además, de forma opcional podemos configurar la ruta del servidor de **zipkin**, ya que por defecto, siempre irá a
 buscar en esa dirección la ruta del servidor:
 
-````
+````properties
 # Probabilidad de exportar trazas. Cambiamos el 0.1 por defecto al 1
 spring.sleuth.sampler.probability=1.0
-
 # Opcional, configurar ruta del servidor zipkin
 spring.zipkin.base-url=http://127.0.0.1:9411/
 ````
@@ -260,8 +262,8 @@ agregamos el de la probabilidad a 100%.
 
 Debemos tener ejecutando el servidor de zipkin:
 
-````
-java -jar zipkin-server-2.24.1-exec.jar
+````bash
+$ java -jar zipkin-server-2.24.1-exec.jar
 ````
 
 Ahora, ejecutamos todos los 5 microservicios. Realizamos una petición, por ejemplo solicitar un token y vamos a la
@@ -280,17 +282,17 @@ Podemos agregar información adicional en la traza, a fin de poder exponerlas pa
 Para este ejemplo se trabajará con el **ms-authorization-server**. Lo primero a realizar será inyectar la
 clase **Tracer**.
 
-````
+````java
 import brave.Tracer;
 
-private final Tracer tracer;
-
+@Component
+public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
     /* más código */
-    private final Tracer tracer;    
+    private final Tracer tracer;
     /* más código */
 
-    public AuthenticationSuccessErrorHandler(/* más código */, Tracer tracer) {
-        /* más código */
+    public AuthenticationSuccessErrorHandler(IUsuarioService usuarioService, Tracer tracer) {
+        this.usuarioService = usuarioService;
         this.tracer = tracer;
     }
     /* más código */
@@ -318,8 +320,8 @@ allí se encuentran todas las imágenes oficiales.
 
 Para descargar la imagen, ejecutamos el siguiente comando:
 
-````
-docker pull mysql:8
+````bash
+$ docker pull mysql:8
 ````
 
 **DONDE:**
@@ -329,8 +331,8 @@ docker pull mysql:8
 
 Finalizada la descarga, listamos todas las imágenes para ver que ya tenemos la imagen de mysql en nuestro docker:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Resultado ---
 REPOSITORY      TAG       IMAGE ID       CREATED          SIZE
@@ -341,8 +343,8 @@ config-server   v1.0.0    36bca5b29011   5 hours ago      362MB
 
 ### Creando contenedor para MySQL
 
-````
-docker container run -p 3306:3306 --name ms-mysql8 --network ms-spring-cloud -e MYSQL_ROOT_PASSWORD=magadiflo -e MYSQL_DATABASE=bd_spring_boot_cloud -d mysql:8
+````bash
+$ docker container run -p 3306:3306 --name ms-mysql8 --network ms-spring-cloud -e MYSQL_ROOT_PASSWORD=magadiflo -e MYSQL_DATABASE=bd_spring_boot_cloud -d mysql:8
 ````
 
 **DONDE**:
@@ -392,14 +394,14 @@ Similar a como descargamos y levantamos mysql, ahora haremos lo mismo con Postgr
 Descargamos la imagen de PostresSQL, versión 12. Usamos el tag 12-alpine porque esa versión de postgres está en
 el SO alpine de linux que es muy ligero:
 
-````
-docker pull postgres:12-alpine
+````bash
+$ docker pull postgres:12-alpine
 ````
 
 Listamos las imágenes y observamos que ya tenemos en nuestro Docker la imagen de postgres:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Resultado ---
 REPOSITORY      TAG         IMAGE ID       CREATED             SIZE
@@ -411,8 +413,8 @@ postgres        12-alpine   945704f99920   5 days ago          230MB
 
 Ahora, crearemos un contenedor a partir de la imagen de postgres:
 
-````
-docker container run -p 5432:5432 --name ms-postgres12 --network ms-spring-cloud -e POSTGRES_PASSWORD=magadiflo -e POSTGRES_DB=bd_spring_boot_cloud -d postgres:12-alpine
+````bash
+$ docker container run -p 5432:5432 --name ms-postgres12 --network ms-spring-cloud -e POSTGRES_PASSWORD=magadiflo -e POSTGRES_DB=bd_spring_boot_cloud -d postgres:12-alpine
 ````
 
 **DONDE**:
@@ -424,8 +426,8 @@ docker container run -p 5432:5432 --name ms-postgres12 --network ms-spring-cloud
 
 Si queremos ver el **log** del contenedor que se está ejecutando, ejecutamos el siguiente comando:
 
-````
-docker container logs -f ms-postgres12
+````bash
+$ docker container logs -f ms-postgres12
 ````
 
 ### Abriendo con DBeaver nuestra base de datos que está siendo ejecutada en nuestro contenedor "ms-postgres12"
@@ -453,14 +455,14 @@ de datos que están contenerizados: mysql y postgres.
 Modificaremos el archivo **ms-productos-development.properties**, reemplazando el **localhost** por el nombre que le
 dimos a nuestro contenedor de mysql, el cual fue: **ms-mysql8**:
 
-````
+````properties
 spring.datasource.url=jdbc:mysql://ms-mysql8:3306/bd_spring_boot_cloud?serverTimezone=America/Lima
 ````
 
 Lo mismo haremos con el archivo **ms-usuarios-development.properties**, cambiando el **localhost** por el nombre que
 le dimos al contenedor de postgres: **ms-postgres12**:
 
-````
+````properties
 spring.datasource.url=jdbc:postgresql://ms-postgres12:5432/bd_spring_boot_cloud
 ````
 
@@ -492,12 +494,12 @@ y al del servidor de configuraciones, esto lo haremos en los siguientes microser
 - ms-authorization-server
 - ms-items
 
-````
+````properties
 # Apuntando al contenedor de Eureka
 eureka.client.service-url.defaultZone=http://eureka-server:8761/eureka
 ````
 
-````
+````properties
 # Apuntando al contenedor de Spring Config
 spring.config.import=optional:configserver:http://config-server:8888
 ````
@@ -571,8 +573,8 @@ networks:
 Nos ubicamos mediante cmd en la raíz de nuestro proyecto principal (microservices-project), ya que allí tenemos nuestro
 archivo **docker-compose.yml** y ejecutamos el siguiente comando:
 
-````
-docker-compose up
+````bash
+$ docker-compose up
 ````
 
 Luego de ejecutar el comando anterior, veremos en la consola que nuestros contenedores se empezarán a levantar. Si no
@@ -624,22 +626,22 @@ trabajando con docker-compose, solo es ejecutar el siguiente comando: ``docker-c
 Ahora sí empezamos a ejecutar nuestros contendores. Como vimos el servicio **ms-productos** depende del **config-server,
 eureka-server y ms-mysql8**, por lo tanto, iremos levantando en ese orden, servicio tras servicio:
 
-````
-docker-compose up -d config-server
-````
-
-````
-docker-compose up -d eureka-server
+````bash
+$ docker-compose up -d config-server
 ````
 
+````bash
+$ docker-compose up -d eureka-server
 ````
-docker-compose up -d ms-mysql8
+
+````bash
+$ docker-compose up -d ms-mysql8
 ````
 
 Finalmente nuestro contenedor cuyo nombre del servicio es: ms-productos
 
-````
-docker-compose up -d ms-productos
+````bash
+$ docker-compose up -d ms-productos
 ````
 
 Verificamos en la web de eureka server que esté la instancia de nuestro servicio productos.
@@ -652,8 +654,8 @@ pensado para poder ser **escalado**.
 
 Para poder escalar el número de instancias o contenedores que quisiéramos, ejecutamos el siguiente comando:
 
-````
-docker-compose up --scale ms-productos=3 -d
+````bash
+$ docker-compose up --scale ms-productos=3 -d
 ````
 
 **DONDE:**
@@ -705,13 +707,13 @@ descritos.
 
 Orden de ejecución de cada servicio usando docker-compose:
 
-````
-docker-compose up -d config-server
-docker-compose up -d eureka-server
-docker-compose up -d ms-mysql8
-docker-compose up -d ms-productos
-docker-compose up -d ms-items
-docker-compose up -d ms-zuul-server
+````bash
+$ docker-compose up -d config-server
+$ docker-compose up -d eureka-server
+$ docker-compose up -d ms-mysql8
+$ docker-compose up -d ms-productos
+$ docker-compose up -d ms-items
+$ docker-compose up -d ms-zuul-server
 ````
 
 ---
@@ -724,8 +726,8 @@ de las cuales depende otro servicio y además el atributo **restart: always** pa
 por ejemplo cuando ocurra algún error. Entonces bajo esas consideraciones es solo es necesario ejecutar
 el comando siguiente:
 
-````
-docker-compose up -d
+````bash
+$ docker-compose up -d
 ````
 
 En automático se procederá con la construcción de los contenedores. Ahora, si por ejemplo, el **ms-productos**

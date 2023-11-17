@@ -3,9 +3,10 @@
 Como crearemos un **proyecto de librería**, es decir no es una aplicación como tal, necesitamos
 hacer algunas configuraciones:
 
-En el pom.xml quitamos la dependencia maven plugin:
+En el `pom.xml` quitamos la dependencia maven plugin:
 
-````
+````xml
+
 <build>
     <plugins>
         <plugin>
@@ -19,9 +20,9 @@ En el pom.xml quitamos la dependencia maven plugin:
 En la clase principal, eliminamos el método main (que contiene el arranque
 de la aplicación):
 
-````
-public static void main(String[] args) {
-    SpringApplication.run(MsCommonsApplication.class, args);
+````java
+public class MsCommonsApplication {
+    /* main method deleted */
 }
 ````
 
@@ -33,7 +34,8 @@ Spring Data JPA, mientras que para el Pojo no necesitamos de ninguna anotación.
 
 Ahora, como usaremos la dependencia de Spring Data JPA:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -50,7 +52,8 @@ Para solucionar ese inconveniente, agregaremos la dependencia
 de H2 (se autoconfigura de forma automática), para que momentáneamente tenga una BD
 aunque no la usaremos aquí, solo es para que no nos arroje el error de autconfiguración:
 
-````
+````xml
+
 <dependency>
     <groupId>com.h2database</groupId>
     <artifactId>h2</artifactId>
@@ -64,7 +67,8 @@ Como este proyecto es de librería, no necesitamos ninguna configuración de un 
 las dependencias de Spring Data JPA, pero no conectarnos. Por lo tanto, **eliminaremos la dependencia de H2** y en
 **la clase principal deshabilitamos la Autoconfiguración del DataSource**:
 
-````
+````java
+
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
 public class MsCommonsApplication {
@@ -77,8 +81,8 @@ public class MsCommonsApplication {
 En el curso, Andrés Guzmán genera el .jar del ms-commons usando la raíz de dicho microservicio
 y ejecutando el siguiente comando:
 
-````
-mvnw.cmd install
+````bash
+$ mvnw.cmd install
 ````
 
 De esa manera, se generará el .jar del ms-commons y además se colocará el .jar en nuestro

@@ -14,15 +14,19 @@ clase principal. Aquí se muestran cómo sería en este caso:
 
 **Usando anotación [Similar a cómo configuramos en el ms-items]**
 
-````
+````java
+
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
-public class MsAuthorizationServerApplication {...}
+public class MsAuthorizationServerApplication {
+    /* code */
+}
 ````
 
 **Desde el mismo pom.xml [En esta oportunidad trabajaremos con esta forma]**
 
-````
+````xml
+
 <dependency>
     <groupId>com.magadiflo.msp.shared.library</groupId>
     <artifactId>ms-usuarios-commons</artifactId>
@@ -45,16 +49,20 @@ la dependencia de Feign.
 
 Primero, habilitaremos el uso de FeignClient con la anotación **@EnableFeignClients** desde la clase principal:
 
-````
+````java
+
 @EnableFeignClients
 @EnableEurekaClient
 @SpringBootApplication
-public class MsAuthorizationServerApplication {...}
+public class MsAuthorizationServerApplication {
+    /* code */
+}
 ````
 
 Crearemos la siguiente interfaz:
 
-````
+````java
+
 @FeignClient(name = "ms-usuarios", path = "/usuarios")
 public interface IUsuarioFeignClient {
 
@@ -89,7 +97,8 @@ usuario buscado se retorna un **UsernameNotFoundException**.
 
 Nuestra implementación de la interfaz UserDetailsService quedaría así:
 
-````
+````java
+
 @Service
 public class UsuarioService implements UserDetailsService {
     private static final Logger LOG = LoggerFactory.getLogger(UsuarioService.class);
@@ -137,7 +146,8 @@ Trataré de separar las responsabilidades a fin de dejar el archivo principal de
 Spring Security (SpringSecurityConfig) lo más limpio posible. En tal sentido, **crearemos una clase de
 configuración** dentro de un directorio llamado */config* que **expondrá el @Bean del PasswordEncoder()**:
 
-````
+````java
+
 @Configuration
 public class UserManagementConfig {
     @Bean
@@ -172,7 +182,8 @@ importante, según el libro no mezclar las distintas formas de anular la configu
 
 Primero veamos cuál es la configuración que en el curso de Andrés Guzmán se realiza:
 
-````
+````java
+
 @Configuration
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
@@ -187,7 +198,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(this.userDetailsService).passwordEncoder(this.passwordEncoder);
     }
-    
+
     /* más código */
 }
 ````
@@ -207,7 +218,8 @@ de Spring Security In Action, así que continuaré con los pasos del curso.
 
 Finalmente, hasta este momento, así quedaría la configuración de nuestra clase SpringSecurityConfig:
 
-````
+````java
+
 @Configuration
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
@@ -231,7 +243,8 @@ validarlo, etc.
 Creamos la siguiente clase de configuración anotándolo con **@EnableAuthorizationServer** para **habilitar la clase como
 un servidor de autorización.**
 
-````
+````java
+
 @EnableAuthorizationServer
 @Configuration
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
@@ -242,7 +255,7 @@ public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdap
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
     }
-    
+
     @Override
     public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
         endpoints.authenticationManager(this.authenticationManager)
@@ -305,16 +318,24 @@ decir que tiene una **doble autenticación**: Por un lado, la **aplicación clie
 Para agregar la configuración a nuestros clientes implementamos el método **configure(ClientDetailsServiceConfigurer
 clients)**:
 
-````
-@Override
-public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-    clients.inMemory()
-            .withClient("frontendApp")
-            .secret(this.passwordEncoder.encode("frontendApp-12345"))
-            .scopes("read", "write")
-            .authorizedGrantTypes("password", "refresh_token")
-            .accessTokenValiditySeconds(3600)
-            .refreshTokenValiditySeconds(3600);
+````java
+
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    /* other codes */
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.inMemory()
+                .withClient("frontendApp")
+                .secret(this.passwordEncoder.encode("frontendApp-12345"))
+                .scopes("read", "write")
+                .authorizedGrantTypes("password", "refresh_token")
+                .accessTokenValiditySeconds(3600)
+                .refreshTokenValiditySeconds(3600);
+    }
+    /* other codes */
 }
 ````
 
@@ -339,11 +360,19 @@ generar el token y validar el token.
 
 Sobreescribimos el método configure(AuthorizationServerSecurityConfigurer security):
 
-````
-@Override
-public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
-    security.tokenKeyAccess("permitAll()")
-            .checkTokenAccess("isAuthenticated()");
+````java
+
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    /* other codes */
+    @Override
+    public void configure(AuthorizationServerSecurityConfigurer security) throws Exception {
+        security.tokenKeyAccess("permitAll()")
+                .checkTokenAccess("isAuthenticated()");
+    }
+    /* other codes */
 }
 ````
 
@@ -368,16 +397,23 @@ Para el ejemplo, necesitamos generar passwords encriptados con BCrypt. Para eso,
 @Bean y generamos una implementación concreta de la interfaz funcional CommandLineRunner. Otra opción sería,
 en vez de crear un bean, que la clase principal implemente la interfaz e implementamos el método run():
 
-````
-@Bean
-public CommandLineRunner run() throws Exception {
-    return args -> {
-        String password = "12345";
-        for (int i = 0; i < 4; i++) {
-            String passwordBcrypt = this.passwordEncoder.encode(password);
-            LOG.info(passwordBcrypt);
-        }
-    };
+````java
+
+@EnableFeignClients
+@EnableEurekaClient
+@SpringBootApplication
+public class MsAuthorizationServerApplication {
+    /* other codes */
+    @Bean
+    public CommandLineRunner run() throws Exception {
+        return args -> {
+            String password = "12345";
+            for (int i = 0; i < 4; i++) {
+                String passwordBcrypt = this.passwordEncoder.encode(password);
+                LOG.info(passwordBcrypt);
+            }
+        };
+    }
 }
 ````
 
@@ -411,7 +447,7 @@ sus rutas en el **application.yml**, a continuación se muestra la configuració
 
 ### Probando la autenticación desde Postman
 
-````
+````bash
 [POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
 ````
 
@@ -461,16 +497,16 @@ grant_type  password
   de autorización, esto nos indica que nos devolverá un token de acceso cuando nosotros le proporcionemos
   nuestras credenciales.
 
-````
 RESPONSE
 
+````json
 {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQyODUzMDgsInVzZXJfbmFtZSI6ImFkbWluIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BRE1JTiIsIlJPTEVfVVNFUiJdLCJqdGkiOiI4NzI5MzM4Yi03NTI4LTQ3M2YtOGU2NS05MjA1MzUyOWFhMDEiLCJjbGllbnRfaWQiOiJmcm9udGVuZEFwcCIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdfQ.qZvNgMvz9AYj7cbI5YQP_oyppNXeOklJ69Hdb754-Ls",
-    "token_type": "bearer",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhdGkiOiI4NzI5MzM4Yi03NTI4LTQ3M2YtOGU2NS05MjA1MzUyOWFhMDEiLCJleHAiOjE2ODQyODUzMDgsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1VTRVIiXSwianRpIjoiNTAwZTMzODgtN2E5NC00MmI1LTg3MmMtMDFjMjI4N2JiZjU0IiwiY2xpZW50X2lkIjoiZnJvbnRlbmRBcHAifQ.8JzKgFAv6Mt1TJ9XpTmdx6VjFxVxmyZQiXMktlB9UQw",
-    "expires_in": 3599,
-    "scope": "read write",
-    "jti": "8729338b-7528-473f-8e65-92053529aa01"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2ODQyODUzMDgsInVzZXJfbmFtZSI6ImFkbWluIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9BRE1JTiIsIlJPTEVfVVNFUiJdLCJqdGkiOiI4NzI5MzM4Yi03NTI4LTQ3M2YtOGU2NS05MjA1MzUyOWFhMDEiLCJjbGllbnRfaWQiOiJmcm9udGVuZEFwcCIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdfQ.qZvNgMvz9AYj7cbI5YQP_oyppNXeOklJ69Hdb754-Ls",
+  "token_type": "bearer",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhdGkiOiI4NzI5MzM4Yi03NTI4LTQ3M2YtOGU2NS05MjA1MzUyOWFhMDEiLCJleHAiOjE2ODQyODUzMDgsImF1dGhvcml0aWVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1VTRVIiXSwianRpIjoiNTAwZTMzODgtN2E5NC00MmI1LTg3MmMtMDFjMjI4N2JiZjU0IiwiY2xpZW50X2lkIjoiZnJvbnRlbmRBcHAifQ.8JzKgFAv6Mt1TJ9XpTmdx6VjFxVxmyZQiXMktlB9UQw",
+  "expires_in": 3599,
+  "scope": "read write",
+  "jti": "8729338b-7528-473f-8e65-92053529aa01"
 }
 ````
 
@@ -484,7 +520,7 @@ usuario a autenticarse se muestran en el código anterior.
 
 Primero, crearemos una interfaz que solo tendrá un método para poder buscar un usuario por su username:
 
-````
+````java
 public interface IUsuarioService {
     Optional<Usuario> findByUsername(String username);
 }
@@ -495,15 +531,16 @@ que nos permitirá hacer la petición al ms-usuarios para encontrar a un usuario
 implemente la interfaz que creamos anteriormente e implementamos su método para poder buscar a un usuario
 por su username:
 
-````
+````java
+
 @Service
-public class UsuarioService implements IUsuarioService, UserDetailsService {  
-  /* Más código */
-  
-  @Override
-  public Optional<Usuario> findByUsername(String username) {
-      return this.usuarioFeignClient.findByUsername(username);
-  }
+public class UsuarioService implements IUsuarioService, UserDetailsService {
+    /* Más código */
+
+    @Override
+    public Optional<Usuario> findByUsername(String username) {
+        return this.usuarioFeignClient.findByUsername(username);
+    }
 }
 ````
 
@@ -512,7 +549,8 @@ agregar información adicional al token (claims). Esta clase hará inyección de
 **UsuarioService,** pero a través de la interfaz que creamos **IUsuarioService,** ya que este tiene el método
 que nos retorna el Usuario a partir de su username:
 
-````
+````java
+
 @Component
 public class InfoAdicionalToken implements TokenEnhancer {
     private final IUsuarioService usuarioService;
@@ -553,17 +591,25 @@ configuración lo hacemos en la clase **AuthorizationServerConfig**, método de 
 a través del constructor la clase **InfoAdicionalToken,** ya que este contiene la información adicional. En el
 método realizamos la siguiente modificación:
 
-````
-@Override
-public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-    TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
-    tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+````java
 
-    endpoints.authenticationManager(this.authenticationManager)
-            .tokenStore(this.jwtTokenStore())
-            .accessTokenConverter(this.jwtAccessTokenConverter())
-            .tokenEnhancer(tokenEnhancerChain);
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    /* other configurations */
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+        tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+
+        endpoints.authenticationManager(this.authenticationManager)
+                .tokenStore(this.jwtTokenStore())
+                .accessTokenConverter(this.jwtAccessTokenConverter())
+                .tokenEnhancer(tokenEnhancerChain);
+    }
 }
+
 ````
 
 Como se observa en el código anterior, creamos un objeto del tipo **TokenEnhancerChain** para poder
@@ -576,31 +622,32 @@ Es importante que el orden de la lista sea primero **la información adicional**
 
 Hacemos uso de la misma petición que hicimos anteriormente, con los mismos datos (ver apartado superior):
 
-````
+````bash
 [POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
 ````
 
 Vemos que nos retorna la información adicional en el objeto.
 
-````
 RESPONSE BODY
+
+````json
 {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiZXhwIjoxNjg0MjkwNjAyLCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6ImY0MDA3OWM2LTA2OTctNDM1Yy1hMjYxLTRlNzlhOWYzMjFiYSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.TtIaiXHPxqs1O0ch_M1-_f2BR_kekbKsc3_HEN8cpP8",
-    "token_type": "bearer",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiYXRpIjoiZjQwMDc5YzYtMDY5Ny00MzVjLWEyNjEtNGU3OWE5ZjMyMWJhIiwiZXhwIjoxNjg0MjkwNjAyLCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6IjAwNTNiYzYzLThhOTUtNDg3ZS05OTc1LTBjOTAzMWFiNTRmYiIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.URoWH5BzWolWDMJhxWxiVvJDSJ9srHkm8iuFol3Tax0",
-    "expires_in": 3599,
-    "scope": "read write",
-    "apellido": "Díaz",
-    "correo": "martin@magadiflo.com",
-    "nombre": "Martín",
-    "jti": "f40079c6-0697-435c-a261-4e79a9f321ba"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiZXhwIjoxNjg0MjkwNjAyLCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6ImY0MDA3OWM2LTA2OTctNDM1Yy1hMjYxLTRlNzlhOWYzMjFiYSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.TtIaiXHPxqs1O0ch_M1-_f2BR_kekbKsc3_HEN8cpP8",
+  "token_type": "bearer",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJtYXJ0aW4iLCJzY29wZSI6WyJyZWFkIiwid3JpdGUiXSwiYXBlbGxpZG8iOiJEw61heiIsImNvcnJlbyI6Im1hcnRpbkBtYWdhZGlmbG8uY29tIiwiYXRpIjoiZjQwMDc5YzYtMDY5Ny00MzVjLWEyNjEtNGU3OWE5ZjMyMWJhIiwiZXhwIjoxNjg0MjkwNjAyLCJub21icmUiOiJNYXJ0w61uIiwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl0sImp0aSI6IjAwNTNiYzYzLThhOTUtNDg3ZS05OTc1LTBjOTAzMWFiNTRmYiIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.URoWH5BzWolWDMJhxWxiVvJDSJ9srHkm8iuFol3Tax0",
+  "expires_in": 3599,
+  "scope": "read write",
+  "apellido": "Díaz",
+  "correo": "martin@magadiflo.com",
+  "nombre": "Martín",
+  "jti": "f40079c6-0697-435c-a261-4e79a9f321ba"
 }
 ````
 
 Decodificando el **access_token** (https://jwt.io/), podemos observar que también se ha incluido dentro
 del token la información adicional.
 
-````
+````json
 {
   "user_name": "martin",
   "scope": [
@@ -630,7 +677,8 @@ usará una aplicación cliente, así como la clave para firmar el token.
 Entonces, necesitamos que nuestro servidor ms-authorization-server se comunique con el servidor de configuraciones
 para obtener dichas configuraciones. Agregamos la dependencia de config client:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-config</artifactId>
@@ -640,10 +688,9 @@ para obtener dichas configuraciones. Agregamos la dependencia de config client:
 Ahora, en el **application.properties** de nuestro **ms-authorization-server** agregamos
 las configuraciones que apunten al servidor de configuraciones:
 
-````
+````properties
 # Configuracion al servidor de configuraciones
 spring.config.import=optional:configserver:http://localhost:8888
-
 # Habilita los endpoints de Spring Actuator
 management.endpoints.web.exposure.include=*
 ````
@@ -655,42 +702,60 @@ de las configuraciones sin necesidad de reiniciar la aplicación.
 Finalmente en nuestra clase **AuthorizationServerConfig** estamos **usando la llave para firmar nuestro token**,
 y además las **credenciales que deberá enviarnos la aplicación cliente**, dichas credenciales ya la colocamos en el
 repositorio del servidor de configuraciones, así que para poder acceder a ellos, necesitamos usar o el **Environment** o
-la
-inyección a través del **@Value**, en este caso usamos el **Environment**:
+la inyección a través del **@Value**, en este caso usamos el **Environment**:
 
-````
-/* más código */
-private final Environment environment;
+````java
 
-public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken, Environment environment) {
-    this.passwordEncoder = passwordEncoder;
-    this.authenticationManager = authenticationManager;
-    this.infoAdicionalToken = infoAdicionalToken;
-    this.environment = environment;
-}
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
 
-/* más código */
-````
+    /* más código */
+    private final Environment environment;
 
-Ahora, cambiamos los valores que están hardcodeados por las que ya están en el servidor de configuración:
+    public AuthorizationServerConfig(PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, InfoAdicionalToken infoAdicionalToken, Environment environment) {
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.infoAdicionalToken = infoAdicionalToken;
+        this.environment = environment;
+    }
 
-````
-@Override
-public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
-    clients.inMemory()
-            .withClient(this.environment.getProperty("config.security.oauth.client.id")) <------ Username de la aplicación cliente
-            .secret(this.passwordEncoder.encode(this.environment.getProperty("config.security.oauth.client.secret"))) <------ Password de la aplicación cliente
-            
     /* más código */
 }
 ````
 
+Ahora, cambiamos los valores que están hardcodeados por las que ya están en el servidor de configuración:
+
+````java
+
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    @Override
+    public void configure(ClientDetailsServiceConfigurer clients) throws Exception {
+        clients.inMemory()
+                .withClient(this.environment.getProperty("config.security.oauth.client.id")) //Username de la aplicación cliente
+                .secret(this.passwordEncoder.encode(this.environment.getProperty("config.security.oauth.client.secret"))); // Password de la aplicación cliente
+        /* más código */
+    }
+}
 ````
-@Bean
-public JwtAccessTokenConverter jwtAccessTokenConverter() {
-    JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
-    jwtAccessTokenConverter.setSigningKey(this.environment.getProperty("config.security.oauth.jwt.key")); <------ Clave secreta para firmar el token
-    return jwtAccessTokenConverter;
+
+````java
+
+@RefreshScope
+@EnableAuthorizationServer
+@Configuration
+public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
+    /* other codes */
+    @Bean
+    public JwtAccessTokenConverter jwtAccessTokenConverter() {
+        JwtAccessTokenConverter jwtAccessTokenConverter = new JwtAccessTokenConverter();
+        jwtAccessTokenConverter.setSigningKey(this.environment.getProperty("config.security.oauth.jwt.key")); // Clave secreta para firmar el token
+        return jwtAccessTokenConverter;
+    }
 }
 ````
 
@@ -721,41 +786,42 @@ vía constructor del **UserDetailsService**, quien al final tomará la implement
 `` configure(AuthorizationServerEndpointsConfigurer endpoints)``, esto último sí es similar a cómo lo hizo
 el estudiante:
 
-````
+````java
+
 @RefreshScope
 @EnableAuthorizationServer
 @Configuration
 public class AuthorizationServerConfig extends AuthorizationServerConfigurerAdapter {
-  /* más código */
-  private final UserDetailsService userDetailsService;
+    /* más código */
+    private final UserDetailsService userDetailsService;
 
-  public AuthorizationServerConfig(/* más código */, UserDetailsService userDetailsService) {
-      /* más código */
-      this.userDetailsService = userDetailsService;
-  }
-  
-  /* más código */
-  
-  @Override
-  public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
-      TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
-      tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+    public AuthorizationServerConfig(/* más código */, UserDetailsService userDetailsService) {
+        /* más código */
+        this.userDetailsService = userDetailsService;
+    }
 
-      endpoints.authenticationManager(this.authenticationManager)
-              .tokenStore(this.jwtTokenStore())
-              .accessTokenConverter(this.jwtAccessTokenConverter())
-              .tokenEnhancer(tokenEnhancerChain)
-              .userDetailsService(this.userDetailsService); <--------------- Agregando el UserDetailsService requerida
-  }
-  
-  /* más código */
-  
+    /* más código */
+
+    @Override
+    public void configure(AuthorizationServerEndpointsConfigurer endpoints) throws Exception {
+        TokenEnhancerChain tokenEnhancerChain = new TokenEnhancerChain();
+        tokenEnhancerChain.setTokenEnhancers(List.of(this.infoAdicionalToken, this.jwtAccessTokenConverter()));
+
+        endpoints.authenticationManager(this.authenticationManager)
+                .tokenStore(this.jwtTokenStore())
+                .accessTokenConverter(this.jwtAccessTokenConverter())
+                .tokenEnhancer(tokenEnhancerChain)
+                .userDetailsService(this.userDetailsService); <---------------Agregando el UserDetailsService requerida
+    }
+
+    /* más código */
+
 }
 ````
 
 ### Probando el refresh_token desde Postman
 
-````
+````bash
 [POST] http://127.0.0.1:8090/api-base/authorization-server-base/oauth/token
 ````
 
@@ -804,19 +870,19 @@ refresh_token   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiI
   de autorización, esto nos indica que si nosotros le proporcionamos el valor de un refresh_token, este nos
   va a devolver un nuevo token.
 
-````
 RESPONSE
 
+````json
 {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImV4cCI6MTY4NDM3NDEwMCwibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6IjAwZGE4NGM3LTBlZWMtNDdmZi1hMTNkLTcxN2Y0YmJmZmRjMSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.5Tlga71jBhEny_mnYHtZn_YKHu5PH6wIY_KZFpash6Q",
-    "token_type": "bearer",
-    "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImF0aSI6IjAwZGE4NGM3LTBlZWMtNDdmZi1hMTNkLTcxN2Y0YmJmZmRjMSIsImV4cCI6MTY4NDM3NDAyMywibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6ImNlYWQwMWM4LTQzZmQtNGJjNC04Nzc1LTM5Zjg1YWM0YjI5MSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.CADuCrHP--MyIPkroNei6jWOTuwrlNV4C0ILkaP7cP8",
-    "expires_in": 3599,
-    "scope": "read write",
-    "apellido": "Admin",
-    "correo": "admin@magadiflo.com",
-    "nombre": "Admin",
-    "jti": "00da84c7-0eec-47ff-a13d-717f4bbffdc1"
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImV4cCI6MTY4NDM3NDEwMCwibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6IjAwZGE4NGM3LTBlZWMtNDdmZi1hMTNkLTcxN2Y0YmJmZmRjMSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.5Tlga71jBhEny_mnYHtZn_YKHu5PH6wIY_KZFpash6Q",
+  "token_type": "bearer",
+  "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX25hbWUiOiJhZG1pbiIsInNjb3BlIjpbInJlYWQiLCJ3cml0ZSJdLCJhcGVsbGlkbyI6IkFkbWluIiwiY29ycmVvIjoiYWRtaW5AbWFnYWRpZmxvLmNvbSIsImF0aSI6IjAwZGE4NGM3LTBlZWMtNDdmZi1hMTNkLTcxN2Y0YmJmZmRjMSIsImV4cCI6MTY4NDM3NDAyMywibm9tYnJlIjoiQWRtaW4iLCJhdXRob3JpdGllcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImp0aSI6ImNlYWQwMWM4LTQzZmQtNGJjNC04Nzc1LTM5Zjg1YWM0YjI5MSIsImNsaWVudF9pZCI6ImZyb250ZW5kQXBwIn0.CADuCrHP--MyIPkroNei6jWOTuwrlNV4C0ILkaP7cP8",
+  "expires_in": 3599,
+  "scope": "read write",
+  "apellido": "Admin",
+  "correo": "admin@magadiflo.com",
+  "nombre": "Admin",
+  "jti": "00da84c7-0eec-47ff-a13d-717f4bbffdc1"
 }
 ````
 
@@ -829,7 +895,8 @@ En este caso, crearemos una clase de componente e implementaremos dos métodos q
 
 Primero crearemos nuestra clase de componente implementando la interfaz AuthenticationEventPublisher:
 
-````
+````java
+
 @Component
 public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
 
@@ -837,7 +904,7 @@ public class AuthenticationSuccessErrorHandler implements AuthenticationEventPub
 
     @Override
     public void publishAuthenticationSuccess(Authentication authentication) {
-        if(authentication.getDetails() instanceof WebAuthenticationDetails) return;
+        if (authentication.getDetails() instanceof WebAuthenticationDetails) return;
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         LOG.info("Login exitoso!: {}", userDetails.getUsername());
@@ -864,23 +931,25 @@ Ahora, en el curso de Andrés Guzmán, la configuración la realiza dentro de la
 configuración de Spring Security, en el método **configure(AuthenticationManagerBuilder auth)**.
 La configuración que realiza en el curso queda así:
 
-````
+````java
+
 @Configuration
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
-    /* más código */	
+    /* más código */
     private final AuthenticationEventPublisher authenticationEventPublisher;
 
-	public SpringSecurityConfig(/* más código */, AuthenticationEventPublisher authenticationEventPublisher) {
-		this.authenticationEventPublisher = authenticationEventPublisher;
-	}
-	
+    public SpringSecurityConfig(/* más código */, AuthenticationEventPublisher authenticationEventPublisher) {
+        this.authenticationEventPublisher = authenticationEventPublisher;
+    }
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(this.usuarioService).passwordEncoder(passwordEncoder())
-            .and()
-            .authenticationEventPublisher(this.authenticationEventPublisher); <------- Aquí se está usando el componente inyectado
+                .and()
+                .authenticationEventPublisher(this.authenticationEventPublisher); <-------Aquí se está usando el
+        componente inyectado
     }
-    
+
 }
 ````
 
@@ -904,19 +973,22 @@ Primero, debemos agregar un atributo a nuestra clase **Usuario** para llevar el 
 realizados. Esta modificación se realizará en la librería **ms-usuarios-commons**, pero lo anotaremos por aquí,
 ya que solo es agregar un atributo:
 
-````
+````java
+
 @Entity
 @Table(name = "usuarios")
 public class Usuario implements Serializable {
-  /* más código */  
-  private Integer intentos;
-  public Integer getIntentos() {
-     return intentos;
-  }
-  public void setIntentos(Integer intentos) {
-     this.intentos = intentos;
-  }
-  /* más código */
+    /* más código */
+    private Integer intentos;
+
+    public Integer getIntentos() {
+        return intentos;
+    }
+
+    public void setIntentos(Integer intentos) {
+        this.intentos = intentos;
+    }
+    /* más código */
 }
 ````
 
@@ -924,13 +996,18 @@ Ahora, como desde este microservicio (ms-authorization-server) nos comunicaremos
 un método en nuestro cliente feign que nos permita hacer la llamada http para poder actualizar los datos del usuario,
 que incluye la nueva propiedad **intentos**:
 
-````
+````java
+
 @FeignClient(name = "ms-usuarios", path = "/usuarios")
 public interface IUsuarioFeignClient {
     /* más código */
-    
+
     @PutMapping(path = "/{id}")
-    Usuario update(@RequestBody Usuario usuario, @PathVariable Long id); <--- para actualizar el usuario, eso incluye el nuevo atributo "intentos"
+    Usuario update(@RequestBody Usuario usuario, @PathVariable Long id); <---
+    para actualizar
+    el usuario, eso
+    incluye el
+    nuevo atributo "intentos"
 }
 ````
 
@@ -939,7 +1016,7 @@ necesitamos un método que nos permita llamar al método para actualizar el usua
 implementando una interfaz que nosotros mismos creamos **(IUsuarioService)**. Usaremos esa misma interfaz para definir
 nuestro método de actualización:
 
-````
+````java
 public interface IUsuarioService {
     /* más código */
     Usuario update(Usuario usuario, Long id);
@@ -950,14 +1027,15 @@ Como agregamos un nuevo método en la interfaz anterior, y como la clase Usuario
 a pedir que agreguemos el método de la interfaz para implementarla. La agregamos y usando el clienteFeign inyectado
 actualizamos el usuario:
 
-````
+````java
+
 @Service
 public class UsuarioService implements IUsuarioService, UserDetailsService {
-  /* más código */
-  @Override
-  public Usuario update(Usuario usuario, Long id) {
-      return this.usuarioFeignClient.update(usuario, id);
-  }
+    /* más código */
+    @Override
+    public Usuario update(Usuario usuario, Long id) {
+        return this.usuarioFeignClient.update(usuario, id);
+    }
 }
 ````
 
@@ -965,15 +1043,16 @@ Finalmente, en nuestra clase de componente **AuthenticationSuccessErrorHandler**
 vía constructor de la interfaz **IUsuarioService** quien tomará como implementación a nuestra clase de
 servicio **UsuarioService**.
 
-````
+````java
+
 @Component
 public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
     private final IUsuarioService usuarioService;
-    
+
     public AuthenticationSuccessErrorHandler(IUsuarioService usuarioService) {
         this.usuarioService = usuarioService;
     }
-    
+
     /* más código */
 }
 ````
@@ -986,17 +1065,22 @@ de éxito o fracaso, según sea el caso.
 En el método de éxito, buscamos al usuario por su username, y verificamos si ha tenido algún
 intento fallido, en caso sea cierto, lo reseteamos a cero.
 
-````
-@Override
-public void publishAuthenticationSuccess(Authentication authentication) {
-    if (authentication.getDetails() instanceof WebAuthenticationDetails) return;
+````java
 
-    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-    LOG.info("Login exitoso!: {}", userDetails.getUsername());
-    Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
-    if (usuario.getIntentos() != null && usuario.getIntentos() > 0) {
-        usuario.setIntentos(0);
-        this.usuarioService.update(usuario, usuario.getId());
+@Component
+public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
+    /* other codes */
+    @Override
+    public void publishAuthenticationSuccess(Authentication authentication) {
+        if (authentication.getDetails() instanceof WebAuthenticationDetails) return;
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        LOG.info("Login exitoso!: {}", userDetails.getUsername());
+        Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
+        if (usuario.getIntentos() != null && usuario.getIntentos() > 0) {
+            usuario.setIntentos(0);
+            this.usuarioService.update(usuario, usuario.getId());
+        }
     }
 }
 ````
@@ -1009,28 +1093,33 @@ En el primer escenario **(usuario no existe)**, **usaremos un bloque try-catch**
 FeignException, ya que es una excepción que ocurre cuando se intenta **buscar un usuario al ms-usuarios** a través
 de **FeignClient** y este no existe.
 
-````
-@Override
-public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {
-    LOG.error("Error en el login: {}", exception.getMessage());
-    try {
-        Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
+````java
 
-        if (usuario.getIntentos() == null) {
-            usuario.setIntentos(0);
+@Component
+public class AuthenticationSuccessErrorHandler implements AuthenticationEventPublisher {
+    /* other codes */
+    @Override
+    public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {
+        LOG.error("Error en el login: {}", exception.getMessage());
+        try {
+            Usuario usuario = this.usuarioService.findByUsername(authentication.getName()).orElseThrow();
+
+            if (usuario.getIntentos() == null) {
+                usuario.setIntentos(0);
+            }
+
+            usuario.setIntentos(usuario.getIntentos() + 1);
+            LOG.info("N° de intentos fallidos: {}", usuario.getIntentos());
+
+            if (usuario.getIntentos() >= 3) {
+                usuario.setEnabled(false);
+                LOG.info("El usuario {} deshabilitado 3 intentos fallidos", usuario.getUsername());
+            }
+            this.usuarioService.update(usuario, usuario.getId());
+
+        } catch (FeignException e) {
+            LOG.error("El usuario {} no existe en el sistema", authentication.getName());
         }
-
-        usuario.setIntentos(usuario.getIntentos() + 1);
-        LOG.info("N° de intentos fallidos: {}", usuario.getIntentos());
-
-        if (usuario.getIntentos() >= 3) {
-            usuario.setEnabled(false);
-            LOG.info("El usuario {} deshabilitado 3 intentos fallidos", usuario.getUsername());
-        }
-        this.usuarioService.update(usuario, usuario.getId());
-
-    } catch (FeignException e) {
-        LOG.error("El usuario {} no existe en el sistema", authentication.getName());
     }
 }
 ````
@@ -1044,32 +1133,37 @@ a través del cliente feign, ya que este es el que usamos para recuperar un usua
 **UsernameNotFoundException**, excepción que se espera que se lance cuando el usuario no sea encontrado. Finalmente,
 el método quedaría de esta manera:
 
-````
-@Override
-public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    try {
-        return this.usuarioFeignClient.findByUsername(username)
-                .map(usuario -> {
+````java
 
-                    List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
-                            .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
-                            .peek(simpleGrantedAuthority -> LOG.info("Rol: {}", simpleGrantedAuthority.getAuthority()))
-                            .toList();
+@Service
+public class UsuarioService implements IUsuarioService, UserDetailsService {
+    /* other codes */
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        try {
+            return this.usuarioFeignClient.findByUsername(username)
+                    .map(usuario -> {
 
-                    UserDetails userDetails = User.builder()
-                            .username(usuario.getUsername())
-                            .password(usuario.getPassword())
-                            .authorities(authorities)
-                            .disabled(!usuario.getEnabled())
-                            .build();
+                        List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
+                                .map(rol -> new SimpleGrantedAuthority(rol.getNombre()))
+                                .peek(simpleGrantedAuthority -> LOG.info("Rol: {}", simpleGrantedAuthority.getAuthority()))
+                                .toList();
 
-                    LOG.info("Detalles del usuario autenticado: {}", userDetails);
+                        UserDetails userDetails = User.builder()
+                                .username(usuario.getUsername())
+                                .password(usuario.getPassword())
+                                .authorities(authorities)
+                                .disabled(!usuario.getEnabled())
+                                .build();
 
-                    return userDetails;
-                }).get();
-    } catch (FeignException fe) {
-        LOG.error("[try-catch]Error en el login, no existe el usuario {} en el sistema", username);
-        throw new UsernameNotFoundException(String.format("[try-catch]Error en el login, no existe el usuario %s en el sistema", username));
+                        LOG.info("Detalles del usuario autenticado: {}", userDetails);
+
+                        return userDetails;
+                    }).get();
+        } catch (FeignException fe) {
+            LOG.error("[try-catch]Error en el login, no existe el usuario {} en el sistema", username);
+            throw new UsernameNotFoundException(String.format("[try-catch]Error en el login, no existe el usuario %s en el sistema", username));
+        }
     }
 }
 ````
@@ -1108,20 +1202,20 @@ ENTRYPOINT ["java", "-jar", "/authorization-server.jar"]
 
 Generamos el **.jar** de este microservicio:
 
-````
-mvnw.cmd clean package -DskipTests
+````bash
+$ mvnw.cmd clean package -DskipTests
 ````
 
 Con el .jar generado anteriormente y nuestro Dockerfile configurado, creamos la imagen:
 
-````
-docker build -t authorization-server:v1.0.0 .
+````bash
+$ docker build -t authorization-server:v1.0.0 .
 ````
 
 Listamos las imágenes y debemos ver el nuestro en docker:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Resultado ---
 REPOSITORY             TAG         IMAGE ID       CREATED              SIZE
@@ -1142,6 +1236,6 @@ Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes cont
 
 Ahora, a partir de la imagen anterior, crearemos nuestro contenedor:
 
-````
-docker container run -p 9100:9100 --network ms-spring-cloud authorization-server:v1.0.0
+````bash
+$ docker container run -p 9100:9100 --network ms-spring-cloud authorization-server:v1.0.0
 ````

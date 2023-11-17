@@ -5,15 +5,16 @@
 - Podemos implementar filtros globales, es decir filtros que se aplican a cualquier ruta.
 - Para eso implementamos la interfaz **GlobalFilter** y le damos un orden.
 
-````
+````java
+
 @Component
 public class EjemploGlobalFilter implements GlobalFilter, Ordered {
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) { ... }
-    
+    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) { /* code */ }
+
     @Override
-    public int getOrder() { ... }
+    public int getOrder() { /* code */ }
 }
 ````
 
@@ -29,7 +30,7 @@ public class EjemploGlobalFilter implements GlobalFilter, Ordered {
   a la ruta del **microservicio productos**, en el application.yml le
   agregamos la configuración:
 
-````
+````yaml
 spring:
   cloud:
     gateway:
@@ -152,7 +153,7 @@ Cookies:
 
 Así estaría configurado en nuestro application.yml del ms-spring-cloud-gateway:
 
-````
+````yaml
 spring:
   cloud:
     gateway:
@@ -166,8 +167,8 @@ spring:
             - Method=GET, POST
             - Query=color, verde
             - Cookie=color, azul
-          ......
-          ......
+          #......
+          #......
 ````
 
 ## Trabajando con Resilience4J
@@ -175,7 +176,8 @@ spring:
 Para trabajar con Resilience4J en Spring Cloud Gateway necesitamos agregar la
 dependencia de **reactor con resilience4J**:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
@@ -190,7 +192,7 @@ de Resilience4J en el mismo archivo:
 
 `El id que le dimos al circuit breaker será 'productos' ya que lo aplicaremos en dicho microservicio`
 
-````
+````yaml
 # Trabajando con Resilience4J
 resilience4j:
   circuitbreaker:
@@ -220,7 +222,7 @@ resilience4j:
 Modificamos la configuración que teníamos inicialmente de Spring Cloud Gateway para
 agregarle el Circuit Breaker, el fallbackUri cuando haya una excepción, etc.
 
-````
+````yaml
 # Configuraciones de Spring Cloud Gateway: predicados, filtros
 spring:
   cloud:
@@ -260,42 +262,45 @@ o el ms-zuul-server o el ms-spring-cloud-gateway (más moderno).
 
 Iniciamos agregando las siguientes dependencias al pom.xml:
 
-````
-<dependency>
-    <groupId>org.springframework.boot</groupId>
-    <artifactId>spring-boot-starter-security</artifactId>
-</dependency>
-<dependency>
-    <groupId>org.springframework.cloud</groupId>
-    <artifactId>spring-cloud-starter-config</artifactId>
-</dependency>
+````xml
 
-<!--  Estas dependencias las encuentra en https://github.com/jwtk/jjwt#install ---->
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt-api</artifactId>
-    <version>0.11.5</version>
-</dependency>
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt-impl</artifactId>
-    <version>0.11.5</version>
-    <scope>runtime</scope>
-</dependency>
-<dependency>
-    <groupId>io.jsonwebtoken</groupId>
-    <artifactId>jjwt-jackson</artifactId>
-    <version>0.11.5</version>
-    <scope>runtime</scope>
-</dependency>
-<!-- --------------------------------------------------------------------------- -->
+<project>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-security</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.cloud</groupId>
+        <artifactId>spring-cloud-starter-config</artifactId>
+    </dependency>
 
-<!-- Esta dependencia en automático se incluye cuando incluimos Spring Security -->
-<dependency>
-    <groupId>org.springframework.security</groupId>
-    <artifactId>spring-security-test</artifactId>
-    <scope>test</scope>
-</dependency>
+    <!--  Estas dependencias las encuentra en https://github.com/jwtk/jjwt#install -->
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-api</artifactId>
+        <version>0.11.5</version>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-impl</artifactId>
+        <version>0.11.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.jsonwebtoken</groupId>
+        <artifactId>jjwt-jackson</artifactId>
+        <version>0.11.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <!--- -->
+
+    <!-- Esta dependencia en automático se incluye cuando incluimos Spring Security -->
+    <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+</project>
 ````
 
 **NOTA:** en el video se hace uso de otra dependencia **spring-cloud-starter-bootstrap**, también lo había
@@ -307,7 +312,7 @@ y es la única dependencia, así que por eso ya no la puse, ya que esa única de
 
 En el application.properties agregamos la configuración para conectarnos al servidor de configuraciones:
 
-````
+````properties
 # Configuracion al servidor de configuraciones
 spring.config.import=optional:configserver:http://localhost:8888
 ````
@@ -324,7 +329,8 @@ del tipo **SecurityWebFilterChain**, para hacer toda la configuración de seguri
 Por el momento, **al tener solo esta configuración**, cuando tratemos de acceder a cualquier
 endPoint, veremos que no podremos, **todos necesitan autenticación**. Nos arrojará un **status 401 Unauthorized**.
 
-````
+````java
+
 @EnableWebFluxSecurity
 public class SpringSecurityConfig {
     @Bean
@@ -379,7 +385,8 @@ public SecurityWebFilterChain configure(ServerHttpSecurity http) {
 Creamos una clase de componente que implementará la interfaz **ReactiveAuthenticationManager**. De esa interfaz
 implementamos su método **authenticate(...)**.
 
-````
+````java
+
 @Component
 public class AuthenticationManagerJwt implements ReactiveAuthenticationManager {
     private static Logger LOG = LoggerFactory.getLogger(AuthenticationManagerJwt.class);
@@ -446,7 +453,8 @@ Finalmente, en el último map, obtenemos de los claims el **user_name** y los **
 Crearemos la clase de filtro para la autenticación llamada **JwtAuthenticationFilter**, implementamos
 la interfaz WebFilter e implementamos su método:
 
-````
+````java
+
 @Component
 public class JwtAuthenticationFilter implements WebFilter {
 
@@ -521,7 +529,8 @@ Anteriormente, habíamos creado nuestra clase de componente **JwtAuthenticationF
 registrarlo en la clase de configuración principal de Spring Security. Para eso aplicamos inyección de
 dependencia vía constructor y agregamos en el método nuestro filtro creado:
 
-````
+````java
+
 @EnableWebFluxSecurity
 public class SpringSecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -529,7 +538,7 @@ public class SpringSecurityConfig {
     public SpringSecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
-    
+
     @Bean
     public SecurityWebFilterChain configure(ServerHttpSecurity http) {
         return http.authorizeExchange()

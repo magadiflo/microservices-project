@@ -362,7 +362,8 @@ Server (ms-config-server) para obtener la configuración de la aplicación.
 
 Debemos agregar en los microservicios que serán cliente la siguiente dependencia:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-config</artifactId>
@@ -375,7 +376,8 @@ Debemos agregar en los microservicios que serán cliente la siguiente dependenci
 
 En el curso, adicionalmente a la dependencia de Config Client, se agrega esta otra dependencia:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.cloud</groupId>
     <artifactId>spring-cloud-starter-bootstrap</artifactId>
@@ -404,7 +406,7 @@ aplicación.properties.
 
 Por el momento tendremos estas dos configuraciones:
 
-````
+````properties
 spring.application.name=ms-items
 spring.config.import=optional:configserver:http://localhost:8888
 ````
@@ -417,7 +419,7 @@ se detenga con una excepción.`
 
 Recordar que, en el repositorio local creamos un archivo properties para el ms-items sin perfil:
 
-````
+````properties
 ms-items.properties
 ````
 
@@ -447,7 +449,7 @@ ms-items-staging.properties
 Y quisiéramos obtener el perfil de **development** cuando arranque la aplicación, en el
 application.properties del ms-items debemos agregar la siguiente configuración:
 
-````
+````properties
 spring.profiles.active=development
 ````
 
@@ -486,7 +488,8 @@ dependencia de **Spring Actuator** y la anotación **@RefreshScope**.
 
 Agregamos la dependencia de Spring Actuator:
 
-````
+````xml
+
 <dependency>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-actuator</artifactId>
@@ -500,11 +503,13 @@ estado de la aplicación, métricas, sesiones, etc.
 Agregamos la anotación @RefreshScope en el componente que inyecta la configuración, en nuestro
 caso en el controlador del ms-items:
 
-````
+````java
+
 @RefreshScope
 @RestController
 @RequestMapping(path = "/api/v1/items")
-public class ItemResource {...}
+public class ItemResource {/* code */
+}
 ````
 
 **@RefreshScope**, permite a las clases que estén anotadas con @Component, @Controllers, @Services, etc.
@@ -560,7 +565,8 @@ creamos un proyecto de librería (ms-commons). **Este ms-items solo necesita un 
 Para usar la clase POJO Producto de la librería ms-commons, necesitamos agregar en el pom.xml de este
 microservicio, su dependencia:
 
-````
+````xml
+
 <dependency>
     <groupId>com.magadiflo.msp.shared.library</groupId>
     <artifactId>ms-commons</artifactId>
@@ -587,16 +593,17 @@ proyecto commons se usa la dependencia Spring Data JPA y nos está obligando a a
 solucionar el error, haremos lo mismo que hicimos dentro de la clase principal de la dependencia de
 ms-commons, agregarle la anotación **@EnableAutoConfiguration**.
 
-````
+````java
+
 @EnableEurekaClient
 @EnableFeignClients
 @SpringBootApplication
 @EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class})
 public class MsItemsApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(MsItemsApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(MsItemsApplication.class, args);
+    }
 
 }
 ````
@@ -629,26 +636,26 @@ Ahora, antes de generar el .jar para este microservicio, necesitamos agregar el 
 al repositorio local de maven, ya que este microservicio está haciendo uso de él. Entonces, posicionados en dicha
 librería ejecutamos:
 
-````
- mvnw.cmd clean install
+````bash
+ $ mvnw.cmd clean install
 ````
 
 Ahora sí es posible generar el .jar para nuestro ms-items:
 
-````
-mvnw.cmd clean package -DskipTests
+````bash
+$ mvnw.cmd clean package -DskipTests
 ````
 
 Creamos la imagen docker:
 
-````
-docker build -t ms-items:v1.0.0 .
+````bash
+$ docker build -t ms-items:v1.0.0 .
 ````
 
 Listamos las imágenes para ver que ya tenemos el nuestro en docker:
 
-````
-docker image ls
+````bash
+$ docker image ls
 
 --- Respuesta ---
 REPOSITORY             TAG         IMAGE ID       CREATED             SIZE
@@ -670,8 +677,8 @@ Ahora, antes de crear el contenedor nos debemos asegurar que los siguientes cont
 
 Ahora, a partir de la imagen anterior, crearemos nuestro contenedor:
 
-````
-docker container run -p 8002:8002 -p 8005:8005 -p 8007:8007 --network ms-spring-cloud ms-items:v1.0.0
+````bash
+$ docker container run -p 8002:8002 -p 8005:8005 -p 8007:8007 --network ms-spring-cloud ms-items:v1.0.0
 ````
 
 **DONDE**
