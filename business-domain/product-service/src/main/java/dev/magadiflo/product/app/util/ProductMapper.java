@@ -11,8 +11,8 @@ import java.time.temporal.ChronoUnit;
 @Component
 public class ProductMapper {
 
-    public ProductResponse toProductResponse(Product product) {
-        return new ProductResponse(product.getId(), product.getName(), product.getPrice(), product.getCreateAt());
+    public ProductResponse toProductResponse(Product product, int port) {
+        return new ProductResponse(product.getId(), product.getName(), product.getPrice(), product.getCreateAt(), port);
     }
 
     public Product toProduct(ProductRequest request) {
