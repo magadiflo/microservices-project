@@ -6,6 +6,7 @@ import dev.magadiflo.product.app.model.dto.ProductResponse;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Component
 public class ProductMapper {
@@ -18,7 +19,7 @@ public class ProductMapper {
         return Product.builder()
                 .name(request.name())
                 .price(request.price())
-                .createAt(LocalDateTime.now())
+                .createAt(LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS))
                 .build();
     }
 
