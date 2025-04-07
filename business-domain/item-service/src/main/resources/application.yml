@@ -1,0 +1,8 @@
+server:
+  port: 8002
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: item-service
