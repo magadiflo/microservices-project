@@ -1,3 +1,4 @@
+TRUNCATE TABLE products;
 ALTER TABLE products AUTO_INCREMENT = 1;
 
 INSERT INTO products(id, name, price, create_at)
