@@ -7,5 +7,5 @@ import java.util.List;
 public interface ItemService {
     List<Item> findItems();
 
-    Item findItemByProductId(Long productId);
+    Item findItemByProductId(Long productId, int quantity);
 }
