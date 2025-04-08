@@ -1,0 +1,21 @@
+server:
+  port: 8002
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: item-service
+  cloud:
+    discovery:
+      client:
+        simple:
+          instances:
+            product-service:
+              - uri: http://localhost:8010
+              - uri: http://localhost:8011
+              - uri: http://localhost:8012
+
+custom:
+  base-url:
+    product-service: http://product-service/api/v1/products
