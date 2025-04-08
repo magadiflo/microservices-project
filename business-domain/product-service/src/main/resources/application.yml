@@ -21,6 +21,14 @@ spring:
     init:
       mode: always
 
+eureka:
+  instance:
+    hostname: localhost
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.name}:${random.value}
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
 logging:
   level:
     org.hibernate.SQL: debug
