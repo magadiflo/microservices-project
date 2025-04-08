@@ -15,3 +15,7 @@ spring:
               - uri: http://localhost:8010
               - uri: http://localhost:8011
               - uri: http://localhost:8012
+
+custom:
+  base-url:
+    product-service: http://product-service/api/v1/products

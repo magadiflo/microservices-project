@@ -5,6 +5,7 @@ import dev.magadiflo.item.app.model.dto.Item;
 import dev.magadiflo.item.app.model.dto.Product;
 import dev.magadiflo.item.app.service.ItemService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -19,8 +20,8 @@ public class ItemServiceWithRestClientImpl implements ItemService {
 
     private final RestClient productRestClient;
 
-    public ItemServiceWithRestClientImpl(RestClient.Builder restClientBuilder) {
-        this.productRestClient = restClientBuilder.baseUrl("http://product-service/api/v1/products").build();
+    public ItemServiceWithRestClientImpl(@Qualifier("productRestClient") RestClient.Builder restClientBuilder) {
+        this.productRestClient = restClientBuilder.build();
     }
 
     @Override
