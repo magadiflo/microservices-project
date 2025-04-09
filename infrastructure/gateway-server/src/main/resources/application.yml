@@ -6,6 +6,17 @@ server:
 spring:
   application:
     name: gateway-server
+  cloud:
+    gateway:
+      routes:
+        - id: product-service-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+        - id: item-service-route
+          uri: lb://item-service
+          predicates:
+            - Path=/api/v1/items/**
 
 eureka:
   instance:
