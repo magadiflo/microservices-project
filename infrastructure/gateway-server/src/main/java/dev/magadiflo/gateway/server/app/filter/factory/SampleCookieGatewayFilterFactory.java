@@ -13,6 +13,11 @@ import java.util.Optional;
 @Slf4j
 @Component
 public class SampleCookieGatewayFilterFactory extends AbstractGatewayFilterFactory<ConfigurationCookie> {
+
+    public SampleCookieGatewayFilterFactory() {
+        super(ConfigurationCookie.class);
+    }
+
     @Override
     public GatewayFilter apply(ConfigurationCookie config) {
         return (exchange, chain) -> {

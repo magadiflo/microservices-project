@@ -13,6 +13,12 @@ spring:
           uri: lb://product-service
           predicates:
             - Path=/api/v1/products/**
+          filters:
+            - name: SampleCookie
+              args:
+                message: "Este es un mensaje personalizado para el product-service"
+                cookieName: "userCookie"
+                cookieValue: "magadiflo"
         - id: item-service-route
           uri: lb://item-service
           predicates:
