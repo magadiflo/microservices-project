@@ -5,11 +5,7 @@ import dev.magadiflo.item.app.service.ItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -27,6 +23,14 @@ public class ItemController {
     @GetMapping
     public ResponseEntity<List<Item>> findProducts() {
         return ResponseEntity.ok(this.itemService.findItems());
+    }
+
+    @GetMapping(path = "/filters-gateway")
+    public ResponseEntity<Void> findProducts(@RequestParam(name = "color-name") String colorName,
+                                             @RequestHeader(name = "X-Request-color") String headerColor) {
+        log.info("AddRequestParameter (color-name): {}", colorName);
+        log.info("AddRequestHeader (X-Request-color): {}", headerColor);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping(path = "/{productId}")

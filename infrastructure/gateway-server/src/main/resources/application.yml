@@ -1,0 +1,36 @@
+server:
+  port: 8090
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: gateway-server
+  cloud:
+    gateway:
+      routes:
+        - id: product-service-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - name: AddMyCookie
+              args:
+                message: "Este es un mensaje personalizado para el product-service"
+                cookieName: "userCookie"
+                cookieValue: "magadiflo"
+        - id: item-service-route
+          uri: lb://item-service
+          predicates:
+            - Path=/api/v1/items/**
+          filters:
+            - AddRequestHeader=X-Request-color, yellow
+            - AddResponseHeader=X-Response-color, green
+            - AddRequestParameter=color-name, blue
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
