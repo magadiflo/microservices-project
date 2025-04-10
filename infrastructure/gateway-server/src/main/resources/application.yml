@@ -14,7 +14,7 @@ spring:
           predicates:
             - Path=/api/v1/products/**
           filters:
-            - name: SampleCookie
+            - name: AddMyCookie
               args:
                 message: "Este es un mensaje personalizado para el product-service"
                 cookieName: "userCookie"

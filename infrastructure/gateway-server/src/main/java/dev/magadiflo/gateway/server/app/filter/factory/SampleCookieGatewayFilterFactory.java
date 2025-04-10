@@ -33,4 +33,9 @@ public class SampleCookieGatewayFilterFactory extends AbstractGatewayFilterFacto
                     }));
         };
     }
+
+    @Override
+    public String name() {
+        return "AddMyCookie";
+    }
 }
