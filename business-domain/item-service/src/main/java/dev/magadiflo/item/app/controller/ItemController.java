@@ -6,7 +6,6 @@ import dev.magadiflo.item.app.service.ItemService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -50,12 +49,12 @@ public class ItemController {
                 .create("items")
                 .run(
                         () -> {
-                            log.info("Llamada exitosa al product-service");
+                            log.info("Llamando al product-service");
                             return ResponseEntity.ok(this.itemService.findItemByProductId(productId, quantity));
                         },
                         throwable -> {
                             log.warn("Error cuando se llamó al product-service, se envía información alternativa");
-                            return ResponseEntity.status(HttpStatus.RESET_CONTENT).body(item);
+                            return ResponseEntity.ok(item);
                         }
                 );
     }
