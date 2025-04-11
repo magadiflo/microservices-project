@@ -19,6 +19,11 @@ spring:
                 message: "Este es un mensaje personalizado para el product-service"
                 cookieName: "userCookie"
                 cookieValue: "magadiflo"
+            - name: CircuitBreaker
+              args:
+                name: products
+                statusCodes: 500, 400
+                fallbackUri: forward:/api/v1/items/fallback
         - id: item-service-route
           uri: lb://item-service
           predicates:
@@ -34,3 +39,24 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+resilience4j.circuitbreaker:
+  configs:
+    shared:
+      slidingWindowSize: 6
+      failureRateThreshold: 50
+      waitDurationInOpenState: 20s
+      permittedNumberOfCallsInHalfOpenState: 4
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 2s
+  instances:
+    products:
+      baseConfig: shared
+
+resilience4j.timelimiter:
+  configs:
+    shared:
+      timeoutDuration: 2s
+  instances:
+    products:
+      baseConfig: shared

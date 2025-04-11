@@ -1,5 +1,6 @@
 package dev.magadiflo.product.app.controller;
 
+import dev.magadiflo.product.app.constan.ProductConstant;
 import dev.magadiflo.product.app.model.dto.ProductRequest;
 import dev.magadiflo.product.app.model.dto.ProductResponse;
 import dev.magadiflo.product.app.service.ProductService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -32,7 +34,14 @@ public class ProductController {
     }
 
     @GetMapping(path = "/{productId}")
-    public ResponseEntity<ProductResponse> findProduct(@PathVariable Long productId) {
+    public ResponseEntity<ProductResponse> findProduct(@PathVariable Long productId) throws InterruptedException {
+        if (productId.equals(10L)) {
+            throw new IllegalStateException(ProductConstant.ILLEGAL_STATE_EXCEPTION.formatted(productId));
+        }
+
+        if (productId.equals(5L)) {
+            TimeUnit.SECONDS.sleep(5);
+        }
         return ResponseEntity.ok(this.productService.findProduct(productId));
     }
 
