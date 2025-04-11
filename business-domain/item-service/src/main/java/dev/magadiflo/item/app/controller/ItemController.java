@@ -35,6 +35,12 @@ public class ItemController {
         return ResponseEntity.ok(this.itemService.findItems());
     }
 
+    @GetMapping("/fallback")
+    public ResponseEntity<Item> fallbackItem() {
+        Product product = new Product(0L, "Fallback desde Gateway", BigDecimal.ZERO, LocalDateTime.now(), 0);
+        return ResponseEntity.ok(new Item(product, 1));
+    }
+
     @GetMapping(path = "/filters-gateway")
     public ResponseEntity<Void> findProducts(@RequestParam(name = "color-name") String colorName,
                                              @RequestHeader(name = "X-Request-color") String headerColor) {
