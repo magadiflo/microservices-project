@@ -1,6 +1,7 @@
 package dev.magadiflo.item.app.config;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
+import io.github.resilience4j.timelimiter.TimeLimiterConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JConfigBuilder;
@@ -25,6 +26,9 @@ public class ResilienceConfig {
                             .failureRateThreshold(50)
                             .waitDurationInOpenState(Duration.ofSeconds(10L))
                             .permittedNumberOfCallsInHalfOpenState(5)
+                            .build())
+                    .timeLimiterConfig(TimeLimiterConfig.custom()
+                            .timeoutDuration(Duration.ofSeconds(6L))
                             .build())
                     .build();
         });
