@@ -4,6 +4,7 @@ import dev.magadiflo.item.app.model.dto.Item;
 import dev.magadiflo.item.app.model.dto.Product;
 import dev.magadiflo.item.app.service.ItemService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @RestController
@@ -66,11 +68,25 @@ public class ItemController {
         return ResponseEntity.ok(this.itemService.findItemByProductId(productId, quantity));
     }
 
+    @TimeLimiter(name = "items", fallbackMethod = "fallbackMethod2")
+    @GetMapping(path = "/cb-2/{productId}")
+    public CompletableFuture<ResponseEntity<Item>> showItem2(@PathVariable Long productId, @RequestParam int quantity) {
+        return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(this.itemService.findItemByProductId(productId, quantity)));
+    }
+
     private ResponseEntity<Item> fallbackMethod(Long productId, int quantity, Throwable throwable) {
         log.info("Dentro del fallbackMethod(), error: {}", throwable.getMessage());
         log.info("productId: {}, quantity: {}", productId, quantity);
         Product product = new Product(0L, "Producto respaldo desde fallbackMethod()", BigDecimal.ZERO, LocalDateTime.now(), 0);
         Item item = new Item(product, 1);
         return ResponseEntity.ok(item);
+    }
+
+    private CompletableFuture<ResponseEntity<Item>> fallbackMethod2(Long productId, int quantity, Throwable throwable) {
+        log.info("Dentro del fallbackMethod2(), error: {}", throwable.getMessage());
+        log.info("productId: {} - quantity: {}", productId, quantity);
+        Product product = new Product(0L, "Producto respaldo desde fallbackMethod2()", BigDecimal.ZERO, LocalDateTime.now(), 0);
+        Item item = new Item(product, 1);
+        return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(item));
     }
 }
