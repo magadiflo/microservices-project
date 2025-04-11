@@ -3,6 +3,7 @@ package dev.magadiflo.item.app.controller;
 import dev.magadiflo.item.app.model.dto.Item;
 import dev.magadiflo.item.app.model.dto.Product;
 import dev.magadiflo.item.app.service.ItemService;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
@@ -57,5 +58,19 @@ public class ItemController {
                             return ResponseEntity.ok(item);
                         }
                 );
+    }
+
+    @CircuitBreaker(name = "items", fallbackMethod = "fallbackMethod")
+    @GetMapping(path = "/cb/{productId}")
+    public ResponseEntity<Item> showItem(@PathVariable Long productId, @RequestParam int quantity) {
+        return ResponseEntity.ok(this.itemService.findItemByProductId(productId, quantity));
+    }
+
+    private ResponseEntity<Item> fallbackMethod(Long productId, int quantity, Throwable throwable) {
+        log.info("Dentro del fallbackMethod(), error: {}", throwable.getMessage());
+        log.info("productId: {}, quantity: {}", productId, quantity);
+        Product product = new Product(0L, "Producto respaldo desde fallbackMethod()", BigDecimal.ZERO, LocalDateTime.now(), 0);
+        Item item = new Item(product, 1);
+        return ResponseEntity.ok(item);
     }
 }
