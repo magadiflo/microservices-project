@@ -26,6 +26,8 @@ public class ResilienceConfig {
                             .failureRateThreshold(50)
                             .waitDurationInOpenState(Duration.ofSeconds(10L))
                             .permittedNumberOfCallsInHalfOpenState(5)
+                            .slowCallRateThreshold(50)
+                            .slowCallDurationThreshold(Duration.ofSeconds(2L))
                             .build())
                     .timeLimiterConfig(TimeLimiterConfig.custom()
                             .timeoutDuration(Duration.ofSeconds(6L))
