@@ -7,6 +7,7 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Slf4j
@@ -23,6 +25,9 @@ public class ItemController {
 
     private final ItemService itemService;
     private final CircuitBreakerFactory circuitBreakerFactory;
+
+    @Value("${custom.text}")
+    private String text;
 
     public ItemController(@Qualifier("itemServiceWithRestClientImpl") ItemService itemService,
                           CircuitBreakerFactory circuitBreakerFactory) {
@@ -35,7 +40,18 @@ public class ItemController {
         return ResponseEntity.ok(this.itemService.findItems());
     }
 
-    @GetMapping("/fallback")
+    @GetMapping(path = "/retrieve-configs")
+    public ResponseEntity<Map<String, Object>> retrieveConfig(@Value("${server.port}") int port) {
+        log.info("text: {}", this.text);
+        log.info("port: {}", port);
+
+        return ResponseEntity.ok(Map.of(
+                "text", this.text,
+                "port", port)
+        );
+    }
+
+    @GetMapping(path = "/fallback")
     public ResponseEntity<Item> fallbackItem() {
         Product product = new Product(0L, "Fallback desde Gateway", BigDecimal.ZERO, LocalDateTime.now(), 0);
         return ResponseEntity.ok(new Item(product, 1));
