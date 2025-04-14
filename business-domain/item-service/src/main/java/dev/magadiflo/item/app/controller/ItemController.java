@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,14 +26,16 @@ public class ItemController {
 
     private final ItemService itemService;
     private final CircuitBreakerFactory circuitBreakerFactory;
+    private final Environment environment;
 
     @Value("${custom.text}")
     private String text;
 
     public ItemController(@Qualifier("itemServiceWithRestClientImpl") ItemService itemService,
-                          CircuitBreakerFactory circuitBreakerFactory) {
+                          CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
         this.itemService = itemService;
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.environment = environment;
     }
 
     @GetMapping
@@ -42,12 +45,16 @@ public class ItemController {
 
     @GetMapping(path = "/retrieve-configs")
     public ResponseEntity<Map<String, Object>> retrieveConfig(@Value("${server.port}") int port) {
-        log.info("text: {}", this.text);
-        log.info("port: {}", port);
+        log.info("server.port: {}", port);
+        log.info("custom.text: {}", this.text);
+        log.info("custom.author.name: {}", this.environment.getProperty("custom.author.name"));
+        log.info("custom.author.email: {}", this.environment.getProperty("custom.author.email"));
 
         return ResponseEntity.ok(Map.of(
-                "text", this.text,
-                "port", port)
+                "custom.text", this.text,
+                "server.port", port,
+                "custom.author.name", this.environment.getProperty("custom.author.name"),
+                "custom.author.email", this.environment.getProperty("custom.author.email"))
         );
     }
 
