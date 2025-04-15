@@ -3,6 +3,8 @@ package dev.magadiflo.item.app.service.impl;
 import dev.magadiflo.item.app.client.ProductFeignClient;
 import dev.magadiflo.item.app.constant.ItemConstant;
 import dev.magadiflo.item.app.model.dto.Item;
+import dev.magadiflo.item.app.model.dto.Product;
+import dev.magadiflo.item.app.model.dto.ProductRequest;
 import dev.magadiflo.item.app.service.ItemService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,5 +32,20 @@ public class ItemServiceImpl implements ItemService {
         return this.productFeignClient.findProduct(productId)
                 .map(product -> new Item(product, quantity))
                 .orElseThrow(() -> new NoSuchElementException(ItemConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(productId)));
+    }
+
+    @Override
+    public Product saveProduct(ProductRequest request) {
+        return this.productFeignClient.saveProduct(request);
+    }
+
+    @Override
+    public Product updateProduct(Long productId, ProductRequest request) {
+        return this.productFeignClient.updateProduct(productId, request);
+    }
+
+    @Override
+    public void deleteProduct(Long productId) {
+        this.productFeignClient.deleteProduct(productId);
     }
 }
