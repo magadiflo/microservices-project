@@ -2,6 +2,7 @@ package dev.magadiflo.item.app.controller;
 
 import dev.magadiflo.item.app.model.dto.Item;
 import dev.magadiflo.item.app.model.dto.Product;
+import dev.magadiflo.item.app.model.dto.ProductRequest;
 import dev.magadiflo.item.app.service.ItemService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
@@ -12,9 +13,19 @@ import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -119,5 +130,23 @@ public class ItemController {
         Product product = new Product(0L, "Producto respaldo desde fallbackMethod2()", BigDecimal.ZERO, LocalDateTime.now(), 0);
         Item item = new Item(product, 1);
         return CompletableFuture.supplyAsync(() -> ResponseEntity.ok(item));
+    }
+
+    @PostMapping(path = "/for-product")
+    public ResponseEntity<Product> saveProduct(@RequestBody ProductRequest productRequest) {
+        Product productResponse = this.itemService.saveProduct(productRequest);
+        URI location = URI.create("/api/v1/products/%d".formatted(productResponse.id()));
+        return ResponseEntity.created(location).body(productResponse);
+    }
+
+    @PutMapping(path = "/for-product/{productId}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long productId, @RequestBody ProductRequest productRequest) {
+        return ResponseEntity.ok(this.itemService.updateProduct(productId, productRequest));
+    }
+
+    @DeleteMapping(path = "/for-product/{productId}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long productId) {
+        this.itemService.deleteProduct(productId);
+        return ResponseEntity.noContent().build();
     }
 }
