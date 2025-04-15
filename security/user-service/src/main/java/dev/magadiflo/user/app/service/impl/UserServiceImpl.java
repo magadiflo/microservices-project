@@ -2,6 +2,7 @@ package dev.magadiflo.user.app.service.impl;
 
 import dev.magadiflo.user.app.constan.UserConstant;
 import dev.magadiflo.user.app.entity.User;
+import dev.magadiflo.user.app.model.dto.UserEnabledRequest;
 import dev.magadiflo.user.app.model.dto.UserRequest;
 import dev.magadiflo.user.app.model.dto.UserResponse;
 import dev.magadiflo.user.app.repository.UserRepository;
@@ -68,5 +69,15 @@ public class UserServiceImpl implements UserService {
         User userDB = this.userRepository.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId)));
         this.userRepository.deleteById(userDB.getId());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserEnabled(Long userId, UserEnabledRequest userEnabledRequest) {
+        return this.userRepository.findById(userId)
+                .map(userDB -> this.userMapper.toUpdateUserEnabled(userDB, userEnabledRequest))
+                .map(this.userRepository::save)
+                .map(this.userMapper::toUserResponse)
+                .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId)));
     }
 }

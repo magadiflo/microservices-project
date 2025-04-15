@@ -1,5 +1,6 @@
 package dev.magadiflo.user.app.service;
 
+import dev.magadiflo.user.app.model.dto.UserEnabledRequest;
 import dev.magadiflo.user.app.model.dto.UserRequest;
 import dev.magadiflo.user.app.model.dto.UserResponse;
 
@@ -17,4 +18,6 @@ public interface UserService {
     UserResponse updateUser(Long userId, UserRequest userRequest);
 
     void deleteUser(Long userId);
+
+    UserResponse updateUserEnabled(Long userId, UserEnabledRequest userEnabledRequest);
 }

@@ -1,5 +1,6 @@
 package dev.magadiflo.user.app.controller;
 
+import dev.magadiflo.user.app.model.dto.UserEnabledRequest;
 import dev.magadiflo.user.app.model.dto.UserRequest;
 import dev.magadiflo.user.app.model.dto.UserResponse;
 import dev.magadiflo.user.app.service.UserService;
@@ -8,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -57,5 +59,10 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         this.userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping(path = "/{userId}/enabled")
+    public ResponseEntity<UserResponse> updateUserEnabled(@PathVariable Long userId, @RequestBody UserEnabledRequest userEnabledRequest) {
+        return ResponseEntity.ok(this.userService.updateUserEnabled(userId, userEnabledRequest));
     }
 }
