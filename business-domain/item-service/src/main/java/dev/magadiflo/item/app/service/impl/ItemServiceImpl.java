@@ -36,16 +36,16 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public Product saveProduct(ProductRequest request) {
-        return null;
+        return this.productFeignClient.saveProduct(request);
     }
 
     @Override
     public Product updateProduct(Long productId, ProductRequest request) {
-        return null;
+        return this.productFeignClient.updateProduct(productId, request);
     }
 
     @Override
     public void deleteProduct(Long productId) {
-
+        this.productFeignClient.deleteProduct(productId);
     }
 }
