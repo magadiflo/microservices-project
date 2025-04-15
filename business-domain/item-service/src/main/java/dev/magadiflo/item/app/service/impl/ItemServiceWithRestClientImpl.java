@@ -4,6 +4,7 @@ import dev.magadiflo.item.app.constant.ItemConstant;
 import dev.magadiflo.item.app.exception.CommunicationException;
 import dev.magadiflo.item.app.model.dto.Item;
 import dev.magadiflo.item.app.model.dto.Product;
+import dev.magadiflo.item.app.model.dto.ProductRequest;
 import dev.magadiflo.item.app.service.ItemService;
 import dev.magadiflo.item.app.util.Util;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -65,5 +67,40 @@ public class ItemServiceWithRestClientImpl implements ItemService {
                     throw new CommunicationException(ItemConstant.COMMUNICATION_MESSAGE.formatted(bodyMessage));
                 });
         return new Item(product, quantity);
+    }
+
+    @Override
+    public Product saveProduct(ProductRequest productRequest) {
+        return this.productRestClient.post()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(productRequest)
+                .retrieve()
+                .body(Product.class);
+    }
+
+    @Override
+    public Product updateProduct(Long productId, ProductRequest productRequest) {
+        return this.productRestClient.put()
+                .uri("/{productId}", productId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(productRequest)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    String bodyMessage = Util.readInputStream(response.getBody());
+                    throw new NoSuchElementException(ItemConstant.NO_FOUND_ELEMENT_MESSAGE.formatted(productId).concat(". ").concat(bodyMessage));
+                })
+                .body(Product.class);
+    }
+
+    @Override
+    public void deleteProduct(Long productId) {
+        this.productRestClient.delete()
+                .uri("/{productId}", productId)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError, (request, response) -> {
+                    String bodyMessage = Util.readInputStream(response.getBody());
+                    throw new NoSuchElementException(ItemConstant.NO_FOUND_ELEMENT_MESSAGE.formatted(productId).concat(". ").concat(bodyMessage));
+                })
+                .toBodilessEntity();
     }
 }
