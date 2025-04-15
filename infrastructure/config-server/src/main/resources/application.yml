@@ -10,4 +10,4 @@ spring:
     config:
       server:
         git:
-          uri: file:///D:/programming/spring/01.udemy/02.andres_guzman/06.microservices_netflix_eureka/config-server-repo
+          uri: https://github.com/magadiflo/config-server-repo.git
