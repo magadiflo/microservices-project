@@ -39,6 +39,13 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserResponse findUserByUsername(String username) {
+        return this.userRepository.findByUsername(username)
+                .map(this.userMapper::toUserResponse)
+                .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_USERNAME_MESSAGE.formatted(username)));
+    }
+
+    @Override
     @Transactional
     public UserResponse saveUser(UserRequest userRequest) {
         User userDB = this.userRepository.save(this.userMapper.toUser(userRequest));

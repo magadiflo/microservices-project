@@ -10,6 +10,8 @@ public interface UserService {
 
     UserResponse findUser(Long userId);
 
+    UserResponse findUserByUsername(String username);
+
     UserResponse saveUser(UserRequest userRequest);
 
     UserResponse updateUser(Long userId, UserRequest userRequest);
