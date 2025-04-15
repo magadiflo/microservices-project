@@ -6,6 +6,16 @@ server:
 spring:
   application:
     name: item-service
+  profiles:
+    active: default
+  config:
+    import: optional:configserver:http://localhost:8888
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh
 
 eureka:
   instance:

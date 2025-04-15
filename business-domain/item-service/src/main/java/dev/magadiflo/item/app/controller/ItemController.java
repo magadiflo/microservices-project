@@ -7,15 +7,20 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.timelimiter.annotation.TimeLimiter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+@RefreshScope
 @Slf4j
 @RestController
 @RequestMapping(path = "/api/v1/items")
@@ -23,11 +28,16 @@ public class ItemController {
 
     private final ItemService itemService;
     private final CircuitBreakerFactory circuitBreakerFactory;
+    private final Environment environment;
+
+    @Value("${custom.text}")
+    private String text;
 
     public ItemController(@Qualifier("itemServiceWithRestClientImpl") ItemService itemService,
-                          CircuitBreakerFactory circuitBreakerFactory) {
+                          CircuitBreakerFactory circuitBreakerFactory, Environment environment) {
         this.itemService = itemService;
         this.circuitBreakerFactory = circuitBreakerFactory;
+        this.environment = environment;
     }
 
     @GetMapping
@@ -35,7 +45,22 @@ public class ItemController {
         return ResponseEntity.ok(this.itemService.findItems());
     }
 
-    @GetMapping("/fallback")
+    @GetMapping(path = "/retrieve-configs")
+    public ResponseEntity<Map<String, Object>> retrieveConfig(@Value("${server.port}") int port) {
+        log.info("server.port: {}", port);
+        log.info("custom.text: {}", this.text);
+        log.info("custom.author.name: {}", this.environment.getProperty("custom.author.name"));
+        log.info("custom.author.email: {}", this.environment.getProperty("custom.author.email"));
+
+        return ResponseEntity.ok(Map.of(
+                "custom.text", this.text,
+                "server.port", port,
+                "custom.author.name", this.environment.getProperty("custom.author.name"),
+                "custom.author.email", this.environment.getProperty("custom.author.email"))
+        );
+    }
+
+    @GetMapping(path = "/fallback")
     public ResponseEntity<Item> fallbackItem() {
         Product product = new Product(0L, "Fallback desde Gateway", BigDecimal.ZERO, LocalDateTime.now(), 0);
         return ResponseEntity.ok(new Item(product, 1));
