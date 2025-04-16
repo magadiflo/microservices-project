@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -64,5 +65,10 @@ public class UserController {
     @PatchMapping(path = "/{userId}/enabled")
     public ResponseEntity<UserResponse> updateUserEnabled(@PathVariable Long userId, @RequestBody UserEnabledRequest userEnabledRequest) {
         return ResponseEntity.ok(this.userService.updateUserEnabled(userId, userEnabledRequest));
+    }
+
+    @PatchMapping(path = "/{userId}/roles")
+    public ResponseEntity<UserResponse> updateUserRoles(@PathVariable Long userId, @RequestBody Set<String> roleNames) {
+        return ResponseEntity.ok(this.userService.updateUserRoles(userId, roleNames));
     }
 }

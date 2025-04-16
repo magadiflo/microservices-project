@@ -57,7 +57,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse saveUser(UserRequest userRequest) {
         User userToSave = this.userMapper.toUser(userRequest);
-        Optional<Role> roleOptional = this.roleRepository.findByName(Roles.ROLE_USER.name());
+        String role = userRequest.isAdmin() != null && userRequest.isAdmin() ? Roles.ROLE_ADMIN.name() : Roles.ROLE_USER.name();
+        Optional<Role> roleOptional = this.roleRepository.findByName(role);
         if (roleOptional.isPresent()) {
             Set<Role> roles = new HashSet<>();
             roles.add(roleOptional.get());
@@ -90,6 +91,25 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateUserEnabled(Long userId, UserEnabledRequest userEnabledRequest) {
         return this.userRepository.findById(userId)
                 .map(userDB -> this.userMapper.toUpdateUserEnabled(userDB, userEnabledRequest))
+                .map(this.userRepository::save)
+                .map(this.userMapper::toUserResponse)
+                .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId)));
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateUserRoles(Long userId, Set<String> roleNames) {
+        boolean invalidRoleExists = roleNames.stream()
+                .anyMatch(roleName -> !Roles.exists(roleName));
+
+        if (invalidRoleExists) {
+            throw new IllegalStateException(UserConstant.ILLEGAL_STATE_ROLE_EXCEPTION);
+        }
+
+        Set<Role> rolesDB = this.roleRepository.findAllByNameIn(roleNames);
+
+        return this.userRepository.findById(userId)
+                .map(userDB -> this.userMapper.toUpdateUserRoles(userDB, rolesDB))
                 .map(this.userRepository::save)
                 .map(this.userMapper::toUserResponse)
                 .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId)));

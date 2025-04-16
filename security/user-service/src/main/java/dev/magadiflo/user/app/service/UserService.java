@@ -5,6 +5,7 @@ import dev.magadiflo.user.app.model.dto.UserRequest;
 import dev.magadiflo.user.app.model.dto.UserResponse;
 
 import java.util.List;
+import java.util.Set;
 
 public interface UserService {
     List<UserResponse> findUsers();
@@ -20,4 +21,6 @@ public interface UserService {
     void deleteUser(Long userId);
 
     UserResponse updateUserEnabled(Long userId, UserEnabledRequest userEnabledRequest);
+
+    UserResponse updateUserRoles(Long userId, Set<String> roleNames);
 }
