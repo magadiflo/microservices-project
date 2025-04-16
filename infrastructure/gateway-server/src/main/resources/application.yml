@@ -32,6 +32,10 @@ spring:
             - AddRequestHeader=X-Request-color, yellow
             - AddResponseHeader=X-Response-color, green
             - AddRequestParameter=color-name, blue
+        - id: user-service-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
 
 eureka:
   instance:
