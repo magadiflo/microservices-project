@@ -41,6 +41,6 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"),
             uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"})
     )
-    @ManyToMany()
+    @ManyToMany
     private Set<Role> roles = new HashSet<>();
 }
