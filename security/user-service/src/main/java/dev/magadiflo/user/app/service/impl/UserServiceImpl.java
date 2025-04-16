@@ -1,10 +1,13 @@
 package dev.magadiflo.user.app.service.impl;
 
 import dev.magadiflo.user.app.constan.UserConstant;
+import dev.magadiflo.user.app.entity.Role;
 import dev.magadiflo.user.app.entity.User;
+import dev.magadiflo.user.app.enums.Roles;
 import dev.magadiflo.user.app.model.dto.UserEnabledRequest;
 import dev.magadiflo.user.app.model.dto.UserRequest;
 import dev.magadiflo.user.app.model.dto.UserResponse;
+import dev.magadiflo.user.app.repository.RoleRepository;
 import dev.magadiflo.user.app.repository.UserRepository;
 import dev.magadiflo.user.app.service.UserService;
 import dev.magadiflo.user.app.util.UserMapper;
@@ -13,8 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -23,6 +29,7 @@ import java.util.NoSuchElementException;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final UserMapper userMapper;
 
     @Override
@@ -49,7 +56,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse saveUser(UserRequest userRequest) {
-        User userDB = this.userRepository.save(this.userMapper.toUser(userRequest));
+        User userToSave = this.userMapper.toUser(userRequest);
+        Optional<Role> roleOptional = this.roleRepository.findByName(Roles.ROLE_USER.name());
+        if (roleOptional.isPresent()) {
+            Set<Role> roles = new HashSet<>();
+            roles.add(roleOptional.get());
+            userToSave.setRoles(roles);
+        }
+        User userDB = this.userRepository.save(userToSave);
         return this.userMapper.toUserResponse(userDB);
     }
 
