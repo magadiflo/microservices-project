@@ -2,9 +2,10 @@ DELETE FROM users_roles;
 DELETE FROM users;
 DELETE FROM roles;
 
+-- Password: 123456
 INSERT INTO users(id, username, password, enabled, email)
-VALUES(1, 'admin', '123456', true, 'admin@gmail.com'),
-(2, 'martin', '123456', true, 'martin@gmail.com');
+VALUES(1, 'admin', '$2a$10$Yg5fqSv6vCGGyf4a6wlOXe9HZVV1EBtcBBKp1KgoF/Ec9j3j2oaPG', true, 'admin@gmail.com'),
+(2, 'martin', '$2a$10$DkMNPHecq0S/T.dkC8Wrh.whOH.hvKzbtmMGs9r4NQcM.VvbIqdJy', true, 'martin@gmail.com');
 
 INSERT INTO roles(id, name)
 VALUES(1, 'ROLE_ADMIN'),
