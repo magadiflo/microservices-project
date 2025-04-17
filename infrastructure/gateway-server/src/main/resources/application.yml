@@ -36,6 +36,12 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/api/v1/users/**
+        - id: authorization-server-route
+          uri: lb://authorization-server
+          predicates:
+            - Path=/api/v1/authorization-server/**
+          filters:
+            - RewritePath=/api/v1/authorization-server/(?<path>.*), /$\{path}
 
 eureka:
   instance:
