@@ -6,6 +6,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
 @Configuration
 public class SecurityConfig {
@@ -21,6 +22,7 @@ public class SecurityConfig {
                         .anyExchange().authenticated()
                 )
                 .cors(ServerHttpSecurity.CorsSpec::disable)
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
                 .oauth2Login(Customizer.withDefaults())
                 .oauth2Client(Customizer.withDefaults())
                 .oauth2ResourceServer(oauth2ResourceServer  ->
