@@ -114,6 +114,8 @@ public class SecurityConfig {
                 .postLogoutRedirectUri("http://127.0.0.1:8090/logout")
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
+                .scope("write")
+                .scope("read")
                 .clientSettings(ClientSettings.builder().requireAuthorizationConsent(false).build())
                 .build();
 
