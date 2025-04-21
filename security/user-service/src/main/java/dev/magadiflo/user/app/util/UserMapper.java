@@ -23,7 +23,7 @@ public class UserMapper {
         Set<RoleResponse> rolesResponse = user.getRoles().stream()
                 .map(role -> new RoleResponse(role.getId(), role.getName()))
                 .collect(Collectors.toSet());
-        return new UserResponse(user.getId(), user.getUsername(), user.isEnabled(), user.getEmail(), rolesResponse);
+        return new UserResponse(user.getId(), user.getUsername(), user.getPassword(), user.isEnabled(), user.getEmail(), rolesResponse);
     }
 
     public User toUser(UserRequest request) {
