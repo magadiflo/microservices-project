@@ -87,3 +87,8 @@ resilience4j.timelimiter:
   instances:
     products:
       baseConfig: shared
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
