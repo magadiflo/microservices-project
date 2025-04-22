@@ -34,6 +34,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserResponse> findUsers() {
+        log.info("Buscando todos los usuarios");
         return this.userRepository.findAll().stream()
                 .map(this.userMapper::toUserResponse)
                 .toList();
@@ -41,30 +42,41 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse findUser(Long userId) {
+        log.info("Buscando usuario por id: {}", userId);
         return this.userRepository.findById(userId)
                 .map(this.userMapper::toUserResponse)
-                .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId)));
+                .orElseThrow(() -> {
+                    log.warn("No se encontró el usuario con id: {}", userId);
+                    return new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId));
+                });
     }
 
     @Override
     public UserResponse findUserByUsername(String username) {
+        log.info("Buscando usuario por username: {}", username);
         return this.userRepository.findByUsername(username)
                 .map(this.userMapper::toUserResponse)
-                .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_USERNAME_MESSAGE.formatted(username)));
+                .orElseThrow(() -> {
+                    log.warn("No se encontró el usuario con username: {}", username);
+                    return new NoSuchElementException(UserConstant.NO_SUCH_USERNAME_MESSAGE.formatted(username));
+                });
     }
 
     @Override
     @Transactional
     public UserResponse saveUser(UserRequest userRequest) {
+        log.info("Guardando nuevo usuario con username: {}", userRequest.username());
         User userToSave = this.userMapper.toUser(userRequest);
         String role = userRequest.isAdmin() != null && userRequest.isAdmin() ? Roles.ROLE_ADMIN.name() : Roles.ROLE_USER.name();
         Optional<Role> roleOptional = this.roleRepository.findByName(role);
         if (roleOptional.isPresent()) {
+            log.info("Asignando el rol {} al usuario {}", roleOptional.get(), userRequest.username());
             Set<Role> roles = new HashSet<>();
             roles.add(roleOptional.get());
             userToSave.setRoles(roles);
         }
         User userDB = this.userRepository.save(userToSave);
+        log.info("Usuario creado con éxito: {}", userDB.getId());
         return this.userMapper.toUserResponse(userDB);
     }
 
@@ -81,8 +93,12 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteUser(Long userId) {
+        log.info("Buscando usuario por id {} para ser eliminado", userId);
         User userDB = this.userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId)));
+                .orElseThrow(() -> {
+                    log.warn("No se encontró al usuario con id: {}", userId);
+                    return new NoSuchElementException(UserConstant.NO_SUCH_ELEMENT_MESSAGE.formatted(userId));
+                });
         this.userRepository.deleteById(userDB.getId());
     }
 
@@ -99,10 +115,12 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserResponse updateUserRoles(Long userId, Set<String> roleNames) {
+        log.info("Actualizando roles para el usuario con id: {}", userId);
         boolean invalidRoleExists = roleNames.stream()
                 .anyMatch(roleName -> !Roles.exists(roleName));
 
         if (invalidRoleExists) {
+            log.warn("Se intentó asignar uno o más roles inválidos: {}", roleNames);
             throw new IllegalStateException(UserConstant.ILLEGAL_STATE_ROLE_EXCEPTION);
         }
 
