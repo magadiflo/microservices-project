@@ -25,8 +25,8 @@ public class ItemServiceWithRestClientImpl implements ItemService {
 
     private final RestClient productRestClient;
 
-    public ItemServiceWithRestClientImpl(@Qualifier("productRestClient") RestClient.Builder restClientBuilder) {
-        this.productRestClient = restClientBuilder.build();
+    public ItemServiceWithRestClientImpl(@Qualifier("productRestClient") RestClient productRestClient) {
+        this.productRestClient = productRestClient;
     }
 
     @Override
