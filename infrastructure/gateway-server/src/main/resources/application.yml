@@ -1,0 +1,97 @@
+server:
+  port: 8090
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: gateway-server
+  cloud:
+    gateway:
+      routes:
+        - id: product-service-route
+          uri: lb://product-service
+          predicates:
+            - Path=/api/v1/products/**
+          filters:
+            - name: AddMyCookie
+              args:
+                message: "Este es un mensaje personalizado para el product-service"
+                cookieName: "userCookie"
+                cookieValue: "magadiflo"
+            - name: CircuitBreaker
+              args:
+                name: products
+                statusCodes: 500, 400
+                fallbackUri: forward:/api/v1/items/fallback
+        - id: item-service-route
+          uri: lb://item-service
+          predicates:
+            - Path=/api/v1/items/**
+          filters:
+            - AddRequestHeader=X-Request-color, yellow
+            - AddResponseHeader=X-Response-color, green
+            - AddRequestParameter=color-name, blue
+        - id: user-service-route
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+        - id: authorization-server-route
+          uri: lb://authorization-server
+          predicates:
+            - Path=/api/v1/authorization-server/**
+          filters:
+            - RewritePath=/api/v1/authorization-server/(?<path>.*), /$\{path}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://127.0.0.1:9000
+      client:
+        registration:
+          my-oauth2-client:
+            provider: my-auth-server
+            client-id: gateway-app
+            client-secret: 123456
+            authorization-grant-type: authorization_code
+            redirect-uri: http://127.0.0.1:8090/authorized
+            scope: openid, profile
+        provider:
+          my-auth-server:
+            issuer-uri: http://127.0.0.1:9000
+
+eureka:
+  instance:
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+resilience4j.circuitbreaker:
+  configs:
+    shared:
+      slidingWindowSize: 6
+      failureRateThreshold: 50
+      waitDurationInOpenState: 20s
+      permittedNumberOfCallsInHalfOpenState: 4
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 2s
+  instances:
+    products:
+      baseConfig: shared
+
+resilience4j.timelimiter:
+  configs:
+    shared:
+      timeoutDuration: 2s
+  instances:
+    products:
+      baseConfig: shared
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://127.0.0.1:9411/api/v2/spans

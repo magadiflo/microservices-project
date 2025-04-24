@@ -1,0 +1,57 @@
+server:
+  port: 8002
+  error:
+    include-message: always
+
+spring:
+  application:
+    name: item-service
+  profiles:
+    active: default
+  config:
+    import: optional:configserver:http://localhost:8888
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: refresh
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://127.0.0.1:9411/api/v2/spans
+
+eureka:
+  instance:
+    prefer-ip-address: true
+    instance-id: ${spring.cloud.client.hostname}:${spring.application.name}:${random.value}
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+resilience4j.circuitbreaker:
+  configs:
+    shared:
+      slidingWindowSize: 6
+      failureRateThreshold: 50
+      waitDurationInOpenState: 20s
+      permittedNumberOfCallsInHalfOpenState: 4
+      slowCallRateThreshold: 50
+      slowCallDurationThreshold: 2s
+  instances:
+    items:
+      baseConfig: shared
+
+resilience4j.timelimiter:
+  configs:
+    shared:
+      timeoutDuration: 2s
+  instances:
+    items:
+      baseConfig: shared
+
+custom:
+  base-url:
+    product-service: lb://product-service/api/v1/products
