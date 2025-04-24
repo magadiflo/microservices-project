@@ -25,12 +25,13 @@ public class ItemServiceWithRestClientImpl implements ItemService {
 
     private final RestClient productRestClient;
 
-    public ItemServiceWithRestClientImpl(@Qualifier("productRestClient") RestClient.Builder restClientBuilder) {
-        this.productRestClient = restClientBuilder.build();
+    public ItemServiceWithRestClientImpl(@Qualifier("productRestClient") RestClient productRestClient) {
+        this.productRestClient = productRestClient;
     }
 
     @Override
     public List<Item> findItems() {
+        log.info("Obteniendo productos desde el product-service");
         List<Product> products = this.productRestClient.get()
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {
@@ -39,7 +40,8 @@ public class ItemServiceWithRestClientImpl implements ItemService {
         if (products == null) {
             throw new IllegalStateException(ItemConstant.ILEGAL_STATE_PRODUCT_MESSAGE);
         }
-
+        log.info("Productos recuperados desde el product-service: {}", products.size());
+        log.info("Generando items a partir de los productos recuperados");
         return products.stream()
                 .map(product -> new Item(product, 1))
                 .toList();
@@ -47,6 +49,7 @@ public class ItemServiceWithRestClientImpl implements ItemService {
 
     @Override
     public Item findItemByProductId(Long productId, int quantity) {
+        log.info("Buscando producto con id {}", productId);
         Product product = this.productRestClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/{productId}")
@@ -66,11 +69,13 @@ public class ItemServiceWithRestClientImpl implements ItemService {
                     String bodyMessage = Util.readInputStream(response.getBody());
                     throw new CommunicationException(ItemConstant.COMMUNICATION_MESSAGE.formatted(bodyMessage));
                 });
+        log.info("Retornando item con producto con id {} y cantidad {}", product, quantity);
         return new Item(product, quantity);
     }
 
     @Override
     public Product saveProduct(ProductRequest productRequest) {
+        log.info("Enviando producto al product-service para guardarlo: {}", productRequest);
         return this.productRestClient.post()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(productRequest)
@@ -80,6 +85,7 @@ public class ItemServiceWithRestClientImpl implements ItemService {
 
     @Override
     public Product updateProduct(Long productId, ProductRequest productRequest) {
+        log.info("Enviando producto al product-service para actualizar producto con id {}, con los datos {}", productId, productRequest);
         return this.productRestClient.put()
                 .uri("/{productId}", productId)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -94,6 +100,7 @@ public class ItemServiceWithRestClientImpl implements ItemService {
 
     @Override
     public void deleteProduct(Long productId) {
+        log.info("Enviando producto al product-service para su eliminación. ProductId: {}", productId);
         this.productRestClient.delete()
                 .uri("/{productId}", productId)
                 .retrieve()
