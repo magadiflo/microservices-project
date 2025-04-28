@@ -7,7 +7,7 @@ spring:
   application:
     name: product-service
   datasource:
-    url: jdbc:mysql://localhost:3306/db_product_service?serverTimezone=America/Lima
+    url: jdbc:mysql://c-mysql:3306/db_product_service?serverTimezone=America/Lima
     username: root
     password: magadiflo
   jpa:
@@ -27,7 +27,7 @@ eureka:
     instance-id: ${spring.cloud.client.hostname}:${spring.application.name}:${random.value}
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://c-discovery-server:8761/eureka/
 
 management:
   tracing:
@@ -35,7 +35,7 @@ management:
       probability: 1.0
   zipkin:
     tracing:
-      endpoint: http://127.0.0.1:9411/api/v2/spans
+      endpoint: http://c-zipkin:9411/api/v2/spans
 
 logging:
   level:
