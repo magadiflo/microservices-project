@@ -16,6 +16,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -147,8 +148,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthorizationServerSettings authorizationServerSettings() {
-        return AuthorizationServerSettings.builder().issuer("http://127.0.0.1:9000").build();
+    public AuthorizationServerSettings authorizationServerSettings(@Value("${custom.auth-server.issuer}") String authServerIssuer) {
+        return AuthorizationServerSettings.builder().issuer(authServerIssuer).build();
     }
 
     @Bean
