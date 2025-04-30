@@ -27,4 +27,4 @@ custom:
   base-url:
     user-service: lb://user-service/api/v1/users
   auth-server:
-    issuer: ${AUTH_SERVER_ISSUER:http://127.0.0.1:9000}
+    issuer: http://c-authorization-server:9000

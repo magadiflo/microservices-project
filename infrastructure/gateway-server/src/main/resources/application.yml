@@ -46,7 +46,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}
+          issuer-uri: http://c-authorization-server:9000
       client:
         registration:
           my-oauth2-client:
@@ -58,7 +58,7 @@ spring:
             scope: openid, profile
         provider:
           my-auth-server:
-            issuer-uri: ${AUTH_SERVER_URL:http://127.0.0.1:9000}
+            issuer-uri: http://c-authorization-server:9000
 
 eureka:
   instance:
