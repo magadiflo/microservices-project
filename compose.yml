@@ -9,6 +9,7 @@ services:
       - '8888:8888'
     networks:
       - microservices-project-net
+
   s-discovery-server:
     build:
       context: ./infrastructure/discovery-server
@@ -19,6 +20,95 @@ services:
       - '8761:8761'
     networks:
       - microservices-project-net
+
+  s-mysql:
+    image: mysql:8.0.41-debian
+    container_name: c-mysql
+    restart: unless-stopped
+    ports:
+      - '3307:3306'
+    environment:
+      MYSQL_DATABASE: db_product_service
+      MYSQL_ROOT_PASSWORD: magadiflo
+      MYSQL_USER: root
+      MYSQL_PASSWORD: magadiflo
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-postgres:
+    image: postgres:17-alpine
+    container_name: c-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: db_user_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: magadiflo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-mysql-zipkin:
+    image: mysql:8.0.41-debian
+    container_name: c-mysql-zipkin
+    restart: unless-stopped
+    ports:
+      - '3308:3306'
+    environment:
+      MYSQL_DATABASE: db_zipkin
+      MYSQL_ROOT_PASSWORD: magadiflo
+      MYSQL_USER: zipkin
+      MYSQL_PASSWORD: zipkin
+    volumes:
+      - mysql-zipkin-data:/var/lib/mysql
+      - ./scripts/zipkin:/docker-entrypoint-initdb.d
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-zipkin:
+    image: openzipkin/zipkin:3.5.1
+    container_name: c-zipkin
+    restart: unless-stopped
+    ports:
+      - '9411:9411'
+    environment:
+      STORAGE_TYPE: mysql
+      MYSQL_HOST: s-mysql-zipkin
+      MYSQL_DB: db_zipkin
+      MYSQL_USER: zipkin
+      MYSQL_PASS: zipkin
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-mysql-zipkin:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+    name: mysql-data
+  postgres-data:
+    name: postgres-data
+  mysql-zipkin-data:
+    name: mysql-zipkin-data
 
 networks:
   microservices-project-net:
