@@ -1,0 +1,25 @@
+services:
+  s-config-server:
+    build:
+      context: ./infrastructure/config-server
+    image: config-server
+    container_name: c-config-server
+    restart: unless-stopped
+    ports:
+      - '8888:8888'
+    networks:
+      - microservices-project-net
+  s-discovery-server:
+    build:
+      context: ./infrastructure/discovery-server
+    image: discovery-server
+    container_name: c-discovery-server
+    restart: unless-stopped
+    ports:
+      - '8761:8761'
+    networks:
+      - microservices-project-net
+
+networks:
+  microservices-project-net:
+    name: microservices-project-net
