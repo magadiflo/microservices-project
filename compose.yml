@@ -1,0 +1,232 @@
+services:
+  s-config-server:
+    build:
+      context: ./infrastructure/config-server
+    image: config-server
+    container_name: c-config-server
+    restart: unless-stopped
+    ports:
+      - '8888:8888'
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-discovery-server:
+    build:
+      context: ./infrastructure/discovery-server
+    image: discovery-server
+    container_name: c-discovery-server
+    restart: unless-stopped
+    ports:
+      - '8761:8761'
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-mysql:
+    image: mysql:8.0.41-debian
+    container_name: c-mysql
+    restart: unless-stopped
+    ports:
+      - '3307:3306'
+    environment:
+      MYSQL_DATABASE: db_product_service
+      MYSQL_ROOT_PASSWORD: magadiflo
+      MYSQL_USER: root
+      MYSQL_PASSWORD: magadiflo
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-postgres:
+    image: postgres:17-alpine
+    container_name: c-postgres
+    restart: unless-stopped
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: db_user_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: magadiflo
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}' ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-mysql-zipkin:
+    image: mysql:8.0.41-debian
+    container_name: c-mysql-zipkin
+    restart: unless-stopped
+    ports:
+      - '3308:3306'
+    environment:
+      MYSQL_DATABASE: db_zipkin
+      MYSQL_ROOT_PASSWORD: magadiflo
+      MYSQL_USER: zipkin
+      MYSQL_PASSWORD: zipkin
+    volumes:
+      - mysql-zipkin-data:/var/lib/mysql
+      - ./scripts/zipkin:/docker-entrypoint-initdb.d
+    networks:
+      - microservices-project-net
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-zipkin:
+    image: openzipkin/zipkin:3.5.1
+    container_name: c-zipkin
+    restart: unless-stopped
+    ports:
+      - '9411:9411'
+    environment:
+      STORAGE_TYPE: mysql
+      MYSQL_HOST: s-mysql-zipkin
+      MYSQL_DB: db_zipkin
+      MYSQL_USER: zipkin
+      MYSQL_PASS: zipkin
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-mysql-zipkin:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9411/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-product-service:
+    build:
+      context: ./business-domain/product-service
+    image: product-service
+    deploy:
+      replicas: 3
+    restart: unless-stopped
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-mysql:
+        condition: service_healthy
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+
+  s-item-service:
+    build:
+      context: ./business-domain/item-service
+    image: item-service
+    container_name: c-item-service
+    restart: unless-stopped
+    ports:
+      - '8085:8085'
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-config-server:
+        condition: service_healthy
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+      s-product-service:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8085/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-user-service:
+    build:
+      context: ./security/user-service
+    image: user-service
+    restart: unless-stopped
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-config-server:
+        condition: service_healthy
+      s-postgres:
+        condition: service_healthy
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+
+  s-authorization-server:
+    build:
+      context: ./security/authorization-server
+    image: authorization-server
+    container_name: c-authorization-server
+    restart: unless-stopped
+    ports:
+      - '9000:9000'
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+      s-user-service:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9000/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-gateway-server:
+    build:
+      context: ./infrastructure/gateway-server
+    image: gateway-server
+    container_name: c-gateway-server
+    restart: unless-stopped
+    ports:
+      - '8090:8090'
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+      s-item-service:
+        condition: service_healthy
+      s-authorization-server:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+    name: mysql-data
+  postgres-data:
+    name: postgres-data
+  mysql-zipkin-data:
+    name: mysql-zipkin-data
+
+networks:
+  microservices-project-net:
+    name: microservices-project-net
