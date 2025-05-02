@@ -121,6 +121,8 @@ services:
     build:
       context: ./business-domain/product-service
     image: product-service
+    deploy:
+      replicas: 3
     restart: unless-stopped
     networks:
       - microservices-project-net
