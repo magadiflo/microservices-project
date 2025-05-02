@@ -121,7 +121,6 @@ services:
     build:
       context: ./business-domain/product-service
     image: product-service
-    container_name: c-product-service
     restart: unless-stopped
     networks:
       - microservices-project-net
@@ -162,7 +161,6 @@ services:
     build:
       context: ./security/user-service
     image: user-service
-    container_name: c-user-service
     restart: unless-stopped
     networks:
       - microservices-project-net
