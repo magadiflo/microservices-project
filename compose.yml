@@ -152,6 +152,72 @@ services:
         condition: service_healthy
       s-product-service:
         condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8085/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-user-service:
+    build:
+      context: ./security/user-service
+    image: user-service
+    container_name: c-user-service
+    restart: unless-stopped
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-config-server:
+        condition: service_healthy
+      s-postgres:
+        condition: service_healthy
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+
+  s-authorization-server:
+    build:
+      context: ./security/authorization-server
+    image: authorization-server
+    container_name: c-authorization-server
+    restart: unless-stopped
+    ports:
+      - '9000:9000'
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+      s-user-service:
+        condition: service_started
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9000/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-gateway-server:
+    build:
+      context: ./infrastructure/gateway-server
+    image: gateway-server
+    container_name: c-gateway-server
+    restart: unless-stopped
+    ports:
+      - '8090:8090'
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+      s-item-service:
+        condition: service_healthy
+      s-authorization-server:
+        condition: service_healthy
 
 volumes:
   mysql-data:

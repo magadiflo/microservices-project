@@ -15,7 +15,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: refresh
+        include: health, refresh
   tracing:
     sampling:
       probability: 1.0
