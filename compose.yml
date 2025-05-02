@@ -9,6 +9,11 @@ services:
       - '8888:8888'
     networks:
       - microservices-project-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   s-discovery-server:
     build:
@@ -20,6 +25,11 @@ services:
       - '8761:8761'
     networks:
       - microservices-project-net
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   s-mysql:
     image: mysql:8.0.41-debian
@@ -101,6 +111,47 @@ services:
     depends_on:
       s-mysql-zipkin:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:9411/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s-product-service:
+    build:
+      context: ./business-domain/product-service
+    image: product-service
+    container_name: c-product-service
+    restart: unless-stopped
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-mysql:
+        condition: service_healthy
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+
+  s-item-service:
+    build:
+      context: ./business-domain/item-service
+    image: item-service
+    container_name: c-item-service
+    restart: unless-stopped
+    ports:
+      - '8085:8085'
+    networks:
+      - microservices-project-net
+    depends_on:
+      s-config-server:
+        condition: service_healthy
+      s-discovery-server:
+        condition: service_healthy
+      s-zipkin:
+        condition: service_healthy
+      s-product-service:
+        condition: service_started
 
 volumes:
   mysql-data:
