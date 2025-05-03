@@ -9,19 +9,19 @@ spring:
   profiles:
     active: default
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://c-config-server:8888
 
 management:
   endpoints:
     web:
       exposure:
-        include: refresh
+        include: health, refresh
   tracing:
     sampling:
       probability: 1.0
   zipkin:
     tracing:
-      endpoint: http://127.0.0.1:9411/api/v2/spans
+      endpoint: http://c-zipkin:9411/api/v2/spans
 
 eureka:
   instance:
@@ -29,7 +29,7 @@ eureka:
     instance-id: ${spring.cloud.client.hostname}:${spring.application.name}:${random.value}
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://c-discovery-server:8761/eureka/
 
 resilience4j.circuitbreaker:
   configs:
